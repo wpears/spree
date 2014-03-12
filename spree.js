@@ -6,6 +6,8 @@
   var parentY;
   var paused=0;
   var orange="border-left:3px solid #ffa500; padding-left: 10px; margin-left:-13px";
+  var globalNode;
+  var cssText;
   var sheet = (function() {
     var style = D.createElement("style");
     style.appendChild(D.createTextNode(""));
@@ -88,34 +90,38 @@ var tmp,node = D.getElementById("spreewpm")||
      (tmp=D.createElement('div'),tmp.id='spreewpm',D.body.appendChild(tmp));
   node.innerText='~'+wpm.toString().slice(0,6)+" wpm"; 
 }
+
   function spree(node,box){
     var words = node.innerText.split(/\s+/);
     var i=0;
     var len=words.length;
     var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
 
+    globalNode = node;
+
     if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
       W.scrollTo(0,node.offsetTop+parentY-100)
-    var cssText = node.style.cssText;
+    cssText = node.style.cssText;
     node.style.cssText = orange;
     (function addWord(){
-      if(stopIt){
-        node.style.cssText=cssText;
-        return;
-      }
+      if(stopIt)return;
       if(paused){
         checkPause.func=addWord;
-        return
+        return;
       } 
       if(i<len){
         var word = words[i++];
         var offset=0;
+
         if(word.length){
           createText(word,box);
+          var first = word[0];
           var last = word[word.length-1];
-          if(last===',')offset=gap/6;
-          else if(last==='.')offset=gap/3;
+          if(first===first.toUpperCase())offset += gap/5;
+          if(last===','||last===';')offset+=gap/5;
+          else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
         }
+
         var delay=gap+offset+word.length*8;
         showDyn(delay);
         setTimeout(addWord,delay);
@@ -126,6 +132,7 @@ var tmp,node = D.getElementById("spreewpm")||
       }
     })();
   }
+
 
   W.addEventListener("mousedown",function(e){
     var timeout=setTimeout(function(){
@@ -140,6 +147,8 @@ var tmp,node = D.getElementById("spreewpm")||
 
       function stop(){
         stopIt=1;
+        paused=0;
+        globalNode.style.cssText=cssText;
         D.body.removeChild(box);
         D.body.removeChild(D.getElementById("spreewpm"));
         W.removeEventListener("keydown",key);

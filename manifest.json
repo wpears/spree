@@ -2,12 +2,12 @@
   "manifest_version": 2,
   "name": "Spree",
   "description":"Speed read web text without having to move your eyes.",
-  "version":"1.0.0",
+  "version":"1.1.0",
   "icons":{"16":"16.png","48":"48.png","128":"128.png"},
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js":["spree.js"],
+      "js":["spree.min.js"],
       "run_at":"document_start"
     }
   ]

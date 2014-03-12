@@ -1,23 +1,28 @@
 (function(W,D){
-  W.addEventListener("DOMContentLoaded",function(){
+  function main(){
   var gap = 100; 
   var stopIt=0;
+  var innerHeight;
+  var parentY;
   var paused=0;
+  var orange="border-left:3px solid #ffa500; padding-left: 10px; margin-left:-13px";
   var sheet = (function() {
     var style = D.createElement("style");
     style.appendChild(D.createTextNode(""));
     D.head.appendChild(style);
     return style.sheet;
   })();
-  sheet.addRule(".spreeCon","position:fixed;width:400px;height:100px;top:50%;left:50%;margin:-50px 0 0 -200px;z-index:9999;background:#fffefc;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-family:Helvetica;font-weight:300",0);
-  sheet.addRule(".spreeaftwrap","float:right;width:250px;display:inline-block;",1);
+  sheet.addRule(".spreeCon","position:fixed;color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;z-index:9999;background:#fffefc;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-family:Helvetica;font-weight:300",0);
+  sheet.addRule(".spreeaftwrap","float:right;width:350px;display:inline-block;background:#fffefc;",1);
   sheet.addRule(".spreeaftwrap >span","float:left",2);
   sheet.addRule("#spreewpm","position:fixed;top:10px;right:10px;font-size:14px;font-family:Helvetica;background:#fffefc;padding:2px;box-shadow:0 1px 1px 0 #666;text-align:center;z-index:9999;color:#ffa500",3);
-
+  sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',4)
+  sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;bottom:0px;',5)
+  sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",6);
   function makeContainer(){
     var box = D.createElement('div');
     box.className="spreeCon";
-    box.innerHTML="<div class='spreeaftwrap'><span style='color:#ffa500'>Spree...</span></div>";
+    box.innerHTML="<div class='spreeaftwrap'><span style='color:#ffa500;margin-left:-50px'>Spree...</span></div>";
     return D.body.appendChild(box);
   }
   function createText(word,box){
@@ -42,6 +47,10 @@
 
     box.appendChild(wrap);
     box.appendChild(pre);
+    
+    var center = W.getComputedStyle(foc).width.slice(0,-2)/-2;
+    foc.style.marginLeft=center+"px";
+    pre.style.marginRight=-center+"px";
   }
 
 function checkPause(){
@@ -75,7 +84,6 @@ function showDyn(delay){
 showDyn.arr=[];
 
 function showWpm(wpm){
-console.log("setting",wpm);
 var tmp,node = D.getElementById("spreewpm")||
      (tmp=D.createElement('div'),tmp.id='spreewpm',D.body.appendChild(tmp));
   node.innerText='~'+wpm.toString().slice(0,6)+" wpm"; 
@@ -85,8 +93,16 @@ var tmp,node = D.getElementById("spreewpm")||
     var i=0;
     var len=words.length;
     var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
+
+    if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
+      W.scrollTo(0,node.offsetTop+parentY-100)
+    var cssText = node.style.cssText;
+    node.style.cssText = orange;
     (function addWord(){
-      if(stopIt)return;
+      if(stopIt){
+        node.style.cssText=cssText;
+        return;
+      }
       if(paused){
         checkPause.func=addWord;
         return
@@ -104,6 +120,7 @@ var tmp,node = D.getElementById("spreewpm")||
         showDyn(delay);
         setTimeout(addWord,delay);
       }else{
+        node.style.cssText=cssText;
         if(next)
           setTimeout(function(){spree(next,box)});
       }
@@ -113,6 +130,8 @@ var tmp,node = D.getElementById("spreewpm")||
   W.addEventListener("mousedown",function(e){
     var timeout=setTimeout(function(){
       stopIt=0;
+      parentY = e.target.parentNode.offsetTop+50;
+      innerHeight = W.innerHeight;
       var box=makeContainer();
       showWpm(60000/(gap+50));
       setTimeout(function(){spree(e.target,box)},500);
@@ -139,6 +158,7 @@ var tmp,node = D.getElementById("spreewpm")||
       W.removeEventListener("mouseup",up);
     });
   });
-});
+}
+if(D.readyState === "loaded"||D.readyState === "complete") main();
+else W.addEventListener("DOMContentLoaded",main);
 })(window,document);
-

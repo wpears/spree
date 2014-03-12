@@ -3,6 +3,7 @@
   var i=0;
   var gap = 100; 
   var stopIt=0;
+ var leftovers=[];
   var innerHeight;
   var parentY;
   var paused=0;
@@ -89,6 +90,20 @@ function rewind(){
   if (i<0)i=0;
 }
 
+function splitWord(word){
+  var start =0;
+  var end = 10;
+  var newWord;
+  var curr;
+  for(var len=word.length;start<len;start+=10,end+=10){
+    curr = word.slice(start,end);
+    if(end<len) curr+="-"
+    if(start===0)newWord = curr;
+    else leftovers.push(curr)
+  }
+return newWord
+}
+
 
 function showDyn(delay){
   showDyn.arr.push(delay);
@@ -134,10 +149,15 @@ function spree(node,box){
       checkPause.func=addWord;
       return;
     } 
-    if(i<len){
-      var word = words[i++];
+    if(i<len||leftovers.length){
+      var word;
       var offset=0;
-
+      if(leftovers.length)
+        word = leftovers.shift();
+      else
+        word = words[i++];
+      if(word.length > 20)
+        word = splitWord(word);
       if(word.length){
         createText(word,box);
         var first = word[0];

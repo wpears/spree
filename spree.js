@@ -180,41 +180,57 @@ function spree(node,box){
 
 
   W.addEventListener("mousedown",function(e){
-    var timeout=setTimeout(function(){
-      stopIt=0;
-      parentY = e.target.parentNode.offsetTop+50;
-      innerHeight = W.innerHeight;
-      var box=makeContainer();
-      showWpm(60000/(gap+50));
-      setTimeout(function(){spree(e.target,box)},500);
+    if(e.button===0||(document.all&&e.button===1)){
+      var x = e.screenX;
+      var y = e.screenY;
+      var timeout=setTimeout(function(){
+        stopIt=0;
+        parentY = e.target.parentNode.offsetTop+50;
+        innerHeight = W.innerHeight;
+        var box=makeContainer();
+        showWpm(60000/(gap+50));
+        setTimeout(function(){spree(e.target,box)},500);
 
-      W.addEventListener("keydown",key);
-      W.addEventListener("mousedown",stop);
+        W.addEventListener("keydown",key);
+        W.addEventListener("mousedown",stop);
 
-      function stop(){
-        stopIt=1;
-        paused=0;
-        globalNode.style.cssText=cssText;
-        D.body.removeChild(box);
-        D.body.removeChild(D.getElementById("spreewpm"));
-        W.removeEventListener("keydown",key);
-        W.removeEventListener("mousedown",stop);
+        function stop(){
+          stopIt=1;
+          paused=0;
+          globalNode.style.cssText=cssText;
+          D.body.removeChild(box);
+          D.body.removeChild(D.getElementById("spreewpm"));
+          W.removeEventListener("keydown",key);
+          W.removeEventListener("mousedown",stop);
+        }
+
+        function key(e){
+          e.preventDefault();
+          var code = e.keyCode;
+          if(code===38||code===40)return setSpeed(code);
+          if(code===32)return checkPause();
+          if(code===37)return rewind();
+          stop();
+        }
+      },1000);
+
+      var up = function(){
+        clearTimeout(timeout);
+        W.removeEventListener("mouseup",up);
+        W.removeEventListener("mousemove",move)
       }
 
-      function key(e){
-        e.preventDefault();
-        var code = e.keyCode;
-        if(code===38||code===40)return setSpeed(code);
-        if(code===32)return checkPause();
-        if(code===37)return rewind();
-        stop();
+      var move = function(e){
+        var xdiff=e.screenX-x;
+        var ydiff=e.screenY-y;
+        if(xdiff>10||xdiff<-10||ydiff>10||ydiff<-10){
+          clearTimeout(timeout);
+          W.removeEventListener("mousemove",move);
+        }
       }
-    },1000);
-
-    var up=W.addEventListener("mouseup",function(){
-      clearTimeout(timeout);
-      W.removeEventListener("mouseup",up);
-    });
+      W.addEventListener("mouseup",up);
+      W.addEventListener("mousemove",move)
+    }
   });
 }
 

@@ -1,6 +1,5 @@
 (function(W,D){
-  W.addEventListener("DOMContentLoaded",function(){
-  var gap = 100; 
+  var gap = 125; 
   var stopIt=0;
   var paused=0;
   var sheet = (function() {
@@ -44,7 +43,7 @@
     box.appendChild(pre);
   }
 
-function checkPause(){
+  function checkPause(){
     if(paused){
       paused=0;
       checkPause.func();
@@ -58,33 +57,20 @@ function setSpeed(code){
   if(code===38)gap-=factor;
   else gap+=factor;
   if(gap<40)gap=40;
-  var wpm = 60000/(gap+50);
+  var wpm = 60000/gap;
   showWpm(wpm);
 }
-function showDyn(delay){
-  showDyn.arr.push(delay);
-  if (showDyn.arr.length === 50){
-    var sum=0;
-    for(var i=0;i<50;i++){
-      sum+=showDyn.arr[i];
-    }
-    showWpm(60000/(sum/50));
-    showDyn.arr.length=0;   
-  }
-}
-showDyn.arr=[];
 
 function showWpm(wpm){
-console.log("setting",wpm);
-var tmp,node = D.getElementById("spreewpm")||
+  var tmp,node = D.getElementById("spreewpm")||
      (tmp=D.createElement('div'),tmp.id='spreewpm',D.body.appendChild(tmp));
-  node.innerText='~'+wpm.toString().slice(0,6)+" wpm"; 
+  node.innerText=wpm.toString().slice(0,6)+" wpm"; 
 }
   function spree(node,box){
     var words = node.innerText.split(/\s+/);
     var i=0;
     var len=words.length;
-    var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
+    var next = node.nextElementSibling||node.parentNode.nextElementSibling;
     (function addWord(){
       if(stopIt)return;
       if(paused){
@@ -93,19 +79,11 @@ var tmp,node = D.getElementById("spreewpm")||
       } 
       if(i<len){
         var word = words[i++];
-        var offset=0;
-        if(word.length){
-          createText(word,box);
-          var last = word[word.length-1];
-          if(last===',')offset=gap/6;
-          else if(last==='.')offset=gap/3;
-        }
-        var delay=gap+offset+word.length*8;
-        showDyn(delay);
-        setTimeout(addWord,delay);
+        if(word.length) createText(word,box);
+        setTimeout(addWord,gap);
       }else{
         if(next)
-          setTimeout(function(){spree(next,box)});
+      setTimeout(function(){spree(next,box)});
       }
     })();
   }
@@ -114,7 +92,7 @@ var tmp,node = D.getElementById("spreewpm")||
     var timeout=setTimeout(function(){
       stopIt=0;
       var box=makeContainer();
-      showWpm(60000/(gap+50));
+      showWpm(60000/gap);
       setTimeout(function(){spree(e.target,box)},500);
       W.addEventListener("keydown",key);
       W.addEventListener("mousedown",stop);
@@ -139,6 +117,5 @@ var tmp,node = D.getElementById("spreewpm")||
       W.removeEventListener("mouseup",up);
     });
   });
-});
 })(window,document);
 

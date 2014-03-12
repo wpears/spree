@@ -8,12 +8,16 @@
   var orange="border-left:3px solid #ffa500; padding-left: 10px; margin-left:-13px";
   var globalNode;
   var cssText;
+
+
   var sheet = (function() {
     var style = D.createElement("style");
     style.appendChild(D.createTextNode(""));
     D.head.appendChild(style);
     return style.sheet;
   })();
+
+
   sheet.addRule(".spreeCon","position:fixed;color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;z-index:9999;background:#fffefc;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-family:Helvetica;font-weight:300",0);
   sheet.addRule(".spreeaftwrap","float:right;width:350px;display:inline-block;background:#fffefc;",1);
   sheet.addRule(".spreeaftwrap >span","float:left",2);
@@ -21,12 +25,16 @@
   sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',4)
   sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;bottom:0px;',5)
   sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",6);
+  
+
   function makeContainer(){
     var box = D.createElement('div');
     box.className="spreeCon";
     box.innerHTML="<div class='spreeaftwrap'><span style='color:#ffa500;margin-left:-50px'>Spree...</span></div>";
     return D.body.appendChild(box);
   }
+
+
   function createText(word,box){
     var focus=word.length/3>>0;
     var pre = D.createElement('span');
@@ -55,6 +63,7 @@
     pre.style.marginRight=-center+"px";
   }
 
+
 function checkPause(){
     if(paused){
       paused=0;
@@ -64,6 +73,7 @@ function checkPause(){
   }
 checkPause.func=function(){};
 
+
 function setSpeed(code){
   var factor = gap/5;
   if(code===38)gap-=factor;
@@ -72,6 +82,8 @@ function setSpeed(code){
   var wpm = 60000/(gap+50);
   showWpm(wpm);
 }
+
+
 function showDyn(delay){
   showDyn.arr.push(delay);
   if (showDyn.arr.length === 50){
@@ -85,53 +97,57 @@ function showDyn(delay){
 }
 showDyn.arr=[];
 
+
 function showWpm(wpm){
 var tmp,node = D.getElementById("spreewpm")||
      (tmp=D.createElement('div'),tmp.id='spreewpm',D.body.appendChild(tmp));
   node.innerText='~'+wpm.toString().slice(0,6)+" wpm"; 
 }
 
-  function spree(node,box){
-    var words = node.innerText.split(/\s+/);
-    var i=0;
-    var len=words.length;
-    var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
 
-    globalNode = node;
+function spree(node,box){
+  var words = node.innerText.split(/\s+/);
+  var i=0;
+  var len=words.length;
+  var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
 
-    if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
-      W.scrollTo(0,node.offsetTop+parentY-100)
-    cssText = node.style.cssText;
-    node.style.cssText = orange;
-    (function addWord(){
-      if(stopIt)return;
-      if(paused){
-        checkPause.func=addWord;
-        return;
-      } 
-      if(i<len){
-        var word = words[i++];
-        var offset=0;
+  globalNode = node;
 
-        if(word.length){
-          createText(word,box);
-          var first = word[0];
-          var last = word[word.length-1];
-          if(first===first.toUpperCase())offset += gap/5;
-          if(last===','||last===';')offset+=gap/5;
-          else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
-        }
+  if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
+    W.scrollTo(0,node.offsetTop+parentY-100)
 
-        var delay=gap+offset+word.length*8;
-        showDyn(delay);
-        setTimeout(addWord,delay);
-      }else{
-        node.style.cssText=cssText;
-        if(next)
-          setTimeout(function(){spree(next,box)});
+  cssText = node.style.cssText;
+  node.style.cssText = orange;
+
+  (function addWord(){
+    if(stopIt)return;
+    if(paused){
+      checkPause.func=addWord;
+      return;
+    } 
+    if(i<len){
+      var word = words[i++];
+      var offset=0;
+
+      if(word.length){
+        createText(word,box);
+        var first = word[0];
+        var last = word[word.length-1];
+        if(first===first.toUpperCase())offset += gap/2;
+        if(last===','||last===';')offset+=gap/5;
+        else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
       }
-    })();
-  }
+
+      var delay=gap+offset+word.length*8;
+      showDyn(delay);
+      setTimeout(addWord,delay);
+    }else{
+      node.style.cssText=cssText;
+      if(next)
+        setTimeout(function(){spree(next,box)});
+    }
+  })();
+}
 
 
   W.addEventListener("mousedown",function(e){
@@ -142,6 +158,7 @@ var tmp,node = D.getElementById("spreewpm")||
       var box=makeContainer();
       showWpm(60000/(gap+50));
       setTimeout(function(){spree(e.target,box)},500);
+
       W.addEventListener("keydown",key);
       W.addEventListener("mousedown",stop);
 
@@ -154,6 +171,7 @@ var tmp,node = D.getElementById("spreewpm")||
         W.removeEventListener("keydown",key);
         W.removeEventListener("mousedown",stop);
       }
+
       function key(e){
         e.preventDefault();
         var code = e.keyCode;
@@ -162,12 +180,14 @@ var tmp,node = D.getElementById("spreewpm")||
         stop();
       }
     },1000);
+
     var up=W.addEventListener("mouseup",function(){
       clearTimeout(timeout);
       W.removeEventListener("mouseup",up);
     });
   });
 }
+
 if(D.readyState === "loaded"||D.readyState === "complete") main();
 else W.addEventListener("DOMContentLoaded",main);
 })(window,document);

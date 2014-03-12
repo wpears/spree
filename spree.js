@@ -1,5 +1,6 @@
 (function(W,D){
   function main(){
+  var i=0;
   var gap = 100; 
   var stopIt=0;
   var innerHeight;
@@ -65,12 +66,12 @@
 
 
 function checkPause(){
-    if(paused){
-      paused=0;
-      checkPause.func();
-    }else
-      paused = 1;
-  }
+  if(paused){
+    paused=0;
+    checkPause.func();
+  }else
+    paused = 1;
+}
 checkPause.func=function(){};
 
 
@@ -81,6 +82,11 @@ function setSpeed(code){
   if(gap<40)gap=40;
   var wpm = 60000/(gap+50);
   showWpm(wpm);
+}
+
+function rewind(){
+  i-=10;
+  if (i<0)i=0;
 }
 
 
@@ -99,18 +105,21 @@ showDyn.arr=[];
 
 
 function showWpm(wpm){
-var tmp,node = D.getElementById("spreewpm")||
-     (tmp=D.createElement('div'),tmp.id='spreewpm',D.body.appendChild(tmp));
+  var tmp, node = D.getElementById("spreewpm")||
+                ( tmp=D.createElement('div')
+                , tmp.id='spreewpm'
+                , D.body.appendChild(tmp)
+                );
   node.innerText='~'+wpm.toString().slice(0,6)+" wpm"; 
 }
 
 
 function spree(node,box){
   var words = node.innerText.split(/\s+/);
-  var i=0;
   var len=words.length;
   var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
 
+  i=0;
   globalNode = node;
 
   if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
@@ -177,6 +186,7 @@ function spree(node,box){
         var code = e.keyCode;
         if(code===38||code===40)return setSpeed(code);
         if(code===32)return checkPause();
+        if(code===37)return rewind();
         stop();
       }
     },1000);

@@ -145,10 +145,19 @@ function setParentOffset(node){
   setParentOffset(node.offsetParent); 
 }
 
+function checkSkip(node){
+  var tag = node.tagName;
+  if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE") return 1;
+  var child = node.firstElementChild;
+  if(child) return checkSkip(child)
+  else return 0;
+}
+
 
 function spree(node,box){
   var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
-  if(node.tagName==="SCRIPT"){
+
+  if(checkSkip(node)){
     if(next) return setTimeout(function(){spree(next,box)});
     else return
   }

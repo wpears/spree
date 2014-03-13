@@ -5,7 +5,7 @@
   var stopIt=0;
  var leftovers=[];
   var innerHeight;
-  var parentY;
+  var parentY=0;
   var paused=0;
   var orange="border-left:3px solid #ffa500; padding-left: 10px; margin-left:-13px";
   var globalNode;
@@ -129,6 +129,13 @@ function showWpm(wpm){
 }
 
 
+function setParentOffset(node){
+  if (node === D.body)return;
+  parentY+=node.offsetTop;
+  setParentOffset(node.offsetParent); 
+}
+
+
 function spree(node,box){
   var words = node.innerText.split(/\s+/);
   var len=words.length;
@@ -138,8 +145,8 @@ function spree(node,box){
   globalNode = node;
 
   if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
-    W.scrollTo(0,node.offsetTop+parentY-100)
-
+    W.scrollTo(0,node.offsetTop+parentY-50)
+  
   cssText = node.style.cssText;
   node.style.cssText = orange;
 
@@ -185,7 +192,7 @@ function spree(node,box){
       var y = e.screenY;
       var timeout=setTimeout(function(){
         stopIt=0;
-        parentY = e.target.parentNode.offsetTop+50;
+        setParentOffset(e.target.offsetParent);
         innerHeight = W.innerHeight;
         var box=makeContainer();
         showWpm(60000/(gap+50));

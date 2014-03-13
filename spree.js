@@ -7,7 +7,7 @@
   var innerHeight;
   var parentY=0;
   var paused=0;
-  var orange="border-left:3px solid #ffa500; padding-left: 10px; margin-left:-13px";
+  var borderStyle="border-left:3px solid #ffa500;padding-left:10px;";
   var globalNode;
   var cssText;
 
@@ -29,41 +29,51 @@
   sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",6);
   
 
-  function makeContainer(){
-    var box = D.createElement('div');
-    box.className="spreeCon";
-    box.innerHTML="<div class='spreeaftwrap'><span style='color:#ffa500;margin-left:-50px'>Spree...</span></div>";
-    return D.body.appendChild(box);
-  }
+function makeContainer(){
+  var box = D.createElement('div');
+  box.className="spreeCon";
+  box.innerHTML="<div class='spreeaftwrap'><span style='color:#ffa500;margin-left:-50px'>Spree...</span></div>";
+  return D.body.appendChild(box);
+}
+
+function setBorderStyle(node){
+  var s = W.getComputedStyle(node)
+    , pd = +s.paddingLeft.slice(0,-2)
+    , brd = +s.borderLeft.split(" ")[0].slice(0,-2)
+    , mrg = +s.marginLeft.slice(0,-2)
+    ;
+  borderStyle+="margin-left:"+(pd+brd+mrg-13)+"px;"
+  console.log(borderStyle);
+}
 
 
-  function createText(word,box){
-    var focus=word.length/3>>0;
-    var pre = D.createElement('span');
-    var foc = D.createElement('span');
-    var aft = D.createElement('span');
-    var wrap = D.createElement('div');
+function createText(word,box){
+  var focus=word.length/3>>0;
+  var pre = D.createElement('span');
+  var foc = D.createElement('span');
+  var aft = D.createElement('span');
+  var wrap = D.createElement('div');
 
-    pre.style.float="right";
-    foc.style.color="#ffa500";
-    wrap.className='spreeaftwrap';
+  pre.style.float="right";
+  foc.style.color="#ffa500";
+  wrap.className='spreeaftwrap';
 
-    pre.innerText=word.slice(0,focus);
-    foc.innerText=word[focus];
-    aft.innerText=word.slice(focus+1);
-     
-    wrap.appendChild(foc);
-    wrap.appendChild(aft);
+  pre.innerText=word.slice(0,focus);
+  foc.innerText=word[focus];
+  aft.innerText=word.slice(focus+1);
+   
+  wrap.appendChild(foc);
+  wrap.appendChild(aft);
 
-    box.innerHTML='';
+  box.innerHTML='';
 
-    box.appendChild(wrap);
-    box.appendChild(pre);
-    
-    var center = W.getComputedStyle(foc).width.slice(0,-2)/-2;
-    foc.style.marginLeft=center+"px";
-    pre.style.marginRight=-center+"px";
-  }
+  box.appendChild(wrap);
+  box.appendChild(pre);
+  
+  var center = W.getComputedStyle(foc).width.slice(0,-2)/-2;
+  foc.style.marginLeft=center+"px";
+  pre.style.marginRight=-center+"px";
+}
 
 
 function checkPause(){
@@ -137,9 +147,14 @@ function setParentOffset(node){
 
 
 function spree(node,box){
+  var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
+  if(node.tagName==="SCRIPT"){
+    if(next) return setTimeout(function(){spree(next,box)});
+    else return
+  }
+
   var words = node.innerText.split(/\s+/);
   var len=words.length;
-  var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
 
   i=0;
   globalNode = node;
@@ -148,7 +163,7 @@ function spree(node,box){
     W.scrollTo(0,node.offsetTop+parentY-50)
   
   cssText = node.style.cssText;
-  node.style.cssText = orange;
+  node.style.cssText = borderStyle;
 
   (function addWord(){
     if(stopIt)return;
@@ -169,7 +184,7 @@ function spree(node,box){
         createText(word,box);
         var first = word[0];
         var last = word[word.length-1];
-        if(first===first.toUpperCase())offset += gap/2;
+        if(first===first.toUpperCase())offset += gap/1.5;
         if(last===','||last===';')offset+=gap/5;
         else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
       }
@@ -193,6 +208,7 @@ function spree(node,box){
       var timeout=setTimeout(function(){
         stopIt=0;
         setParentOffset(e.target.offsetParent);
+        setBorderStyle(e.target);
         innerHeight = W.innerHeight;
         var box=makeContainer();
         showWpm(60000/(gap+50));

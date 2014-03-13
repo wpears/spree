@@ -43,7 +43,6 @@ function setBorderStyle(node){
     , mrg = +s.marginLeft.slice(0,-2)
     ;
   borderStyle+="margin-left:"+(pd+brd+mrg-13)+"px;"
-  console.log(borderStyle);
 }
 
 
@@ -147,7 +146,7 @@ function setParentOffset(node){
 
 function checkSkip(node){
   var tag = node.tagName;
-  if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE") return 1;
+  if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM") return 1;
   var child = node.firstElementChild;
   if(child) return checkSkip(child)
   else return 0;
@@ -211,7 +210,7 @@ function spree(node,box){
 
 
   W.addEventListener("mousedown",function(e){
-    if(e.button===0||(document.all&&e.button===1)){
+    if(e.target.tagName!=="SELECT"&&(e.button===0||(document.all&&e.button===1))){
       var x = e.screenX;
       var y = e.screenY;
       var timeout=setTimeout(function(){

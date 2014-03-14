@@ -1,4 +1,4 @@
-(function(W,D){
+  (function(W,D){
   function main(){
   var i=0;
   var gap = 100; 
@@ -8,9 +8,10 @@
   var parentY=0;
   var paused=0;
   var borderStyle="border-left:3px solid #ffa500;padding-left:10px;";
+  var globalWord;
   var globalNode;
   var cssText;
-
+  var pauseHTML;
 
   var sheet = (function() {
     var style = D.createElement("style");
@@ -26,7 +27,8 @@
   sheet.addRule("#spreewpm","position:fixed;top:10px;right:10px;font-size:14px;font-family:Helvetica;background:#fffefc;padding:2px;box-shadow:0 1px 1px 0 #666;text-align:center;z-index:9999;color:#ffa500",3);
   sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',4)
   sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;bottom:0px;',5)
-  sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",6);
+  sheet.addRule(".spreeHL","background-color:#FFC966;",6);
+  sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",7);
   
 
 function makeContainer(){
@@ -73,14 +75,35 @@ function createText(word,box){
   foc.style.marginLeft=center+"px";
   pre.style.marginRight=-center+"px";
 }
+function highlight(){
+  var node=globalNode;
+  pauseHTML=node.innerHTML;
+  var htmlArr = pauseHTML.split(/\s+/);
+  var ind = i-1;
+  var curr;
+  while((curr=htmlArr[ind].indexOf(globalWord))===-1) ind++;
+  var start = curr;
+  var end = start+globalWord.length;
+  htmlArr.splice(ind,1,htmlArr[ind].slice(0,start)+'<span class="spreeHL">'+globalWord+'</span>'+htmlArr[ind].slice(end));  
+  //loop through pauseHTML matches of /\s+/ building a string with htmlArr
+}
+
+
+function clearHighlight(){
+  globalNode.innerHTML=pauseHTML;
+  pauseHTML="";
+}
 
 
 function checkPause(){
   if(paused){
     paused=0;
+    clearHighlight();
     checkPause.func();
-  }else
+  }else{
     paused = 1;
+    highlight();
+  }
 }
 checkPause.func=function(){};
 
@@ -188,7 +211,9 @@ function spree(node,box){
         word = words[i++];
       if(word.length > 20)
         word = splitWord(word);
+
       if(word.length){
+        globalWord = word;
         createText(word,box);
         var first = word[0];
         var last = word[word.length-1];
@@ -228,7 +253,10 @@ function spree(node,box){
         function stop(){
           stopIt=1;
           paused=0;
+          if(pauseHTML)clearHighlight();
           globalNode.style.cssText=cssText;
+          globalNode=null;
+          globalWord="";
           D.body.removeChild(box);
           D.body.removeChild(D.getElementById("spreewpm"));
           W.removeEventListener("keydown",key);

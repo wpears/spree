@@ -23,13 +23,13 @@
 
   sheet.addRule(".spreeCon","position:fixed;color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;z-index:9999;background:#fffefc;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-family:Helvetica;font-weight:300",0);
   sheet.addRule(".spreeaftwrap","float:right;width:350px;display:inline-block;background:#fffefc;",1);
-  sheet.addRule(".spreeaftwrap >span","float:left",2);
+  sheet.addRule(".spreeaftwrap >span","float:left,line-height:100px",2);
   sheet.addRule("#spreewpm","position:fixed;top:10px;right:10px;font-size:14px;font-family:Helvetica;background:#fffefc;padding:2px;box-shadow:0 1px 1px 0 #666;text-align:center;z-index:9999;color:#ffa500",3);
   sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',4)
   sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;bottom:0px;',5)
   sheet.addRule(".spreeHL","background-color:#FFC966;",6);
   sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",7);
-  
+  sheet.addRule(".spreeCon >span","line-height:100px",8);
 
 function makeContainer(){
   var box = D.createElement('div');
@@ -98,11 +98,11 @@ function clearHighlight(){
 function checkPause(){
   if(paused){
     paused=0;
-    clearHighlight();
+ //   clearHighlight();
     checkPause.func();
   }else{
     paused = 1;
-    highlight();
+//    highlight();
   }
 }
 checkPause.func=function(){};
@@ -253,7 +253,7 @@ function spree(node,box){
         function stop(){
           stopIt=1;
           paused=0;
-          if(pauseHTML)clearHighlight();
+         // if(pauseHTML)clearHighlight();
           globalNode.style.cssText=cssText;
           globalNode=null;
           globalWord="";

@@ -3,13 +3,15 @@
   var i=0;
   var gap = 100; 
   var stopIt=0;
- var leftovers=[];
+  var empty = '';
+  var leftovers=[];
   var innerHeight;
   var parentY=0;
   var paused=0;
   var borderStyle="border-left:3px solid #ffa500;padding-left:10px;";
   var globalWord;
   var globalNode;
+  var currText=empty;
   var cssText;
   var pauseHTML;
 
@@ -22,7 +24,7 @@
 
 
   sheet.addRule(".spreeCon","position:fixed;color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;z-index:9999;background:#fffefc;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-family:Helvetica;font-weight:300",0);
-  sheet.addRule(".spreeaftwrap","float:right;width:350px;display:inline-block;background:#fffefc;",1);
+  sheet.addRule(".spreeaftwrap","float:right;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
   sheet.addRule(".spreeaftwrap >span","float:left,line-height:100px",2);
   sheet.addRule("#spreewpm","position:fixed;top:10px;right:10px;font-size:14px;font-family:Helvetica;background:#fffefc;padding:2px;box-shadow:0 1px 1px 0 #666;text-align:center;z-index:9999;color:#ffa500",3);
   sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',4)
@@ -71,7 +73,7 @@ function createText(word,box){
   box.appendChild(wrap);
   box.appendChild(pre);
   
-  var center = W.getComputedStyle(foc).width.slice(0,-2)/-2;
+  var center = foc.offsetWidth/-2;
   foc.style.marginLeft=center+"px";
   pre.style.marginRight=-center+"px";
 }
@@ -169,22 +171,30 @@ function setParentOffset(node){
 
 function checkSkip(node){
   var tag = node.tagName;
-  if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM") return 1;
-  var child = node.firstElementChild;
-  if(child) return checkSkip(child)
-  else return 0;
+  if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
+  var nodes = node.childNodes
+    , len=nodes.length;
+  if(len){ 
+    for(var i=0;i<len;i++)
+      checkSkip(nodes[i])
+  }else{
+    if(node.nodeType === 3){
+      currText+=' '+node.nodeValue;
+    }
+  }
 }
 
 
 function spree(node,box){
   var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
-
-  if(checkSkip(node)){
+  checkSkip(node);
+  if(!currText.length){
     if(next) return setTimeout(function(){spree(next,box)});
     else return
   }
 
-  var words = node.innerText.split(/\s+/);
+
+  var words = currText.split(/\s+/);
   var len=words.length;
 
   i=0;
@@ -227,6 +237,7 @@ function spree(node,box){
       setTimeout(addWord,delay);
     }else{
       node.style.cssText=cssText;
+      currText=empty;
       if(next)
         setTimeout(function(){spree(next,box)});
     }

@@ -1,4 +1,5 @@
-  (function(W,D){
+  
+(function(W,D){
   function main(){
   var i=0;
   var gap = 100; 
@@ -114,7 +115,7 @@ function setSpeed(code){
   var factor = gap/5;
   if(code===38)gap-=factor;
   else gap+=factor;
-  if(gap<40)gap=40;
+  if(gap<10)gap=10;
   var wpm = 60000/(gap+50);
   showWpm(wpm);
 }

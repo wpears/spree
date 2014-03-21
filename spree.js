@@ -1,5 +1,5 @@
 (function(W,D){
-  
+
   function main(){
     var i=0;
     var gap = 100; 
@@ -10,12 +10,12 @@
     var parentY=0;
     var paused=0;
     var borderStyle="border-left:3px solid #ffa500;padding-left:10px;";
-    var globalWord;
     var globalNode;
     var currText=empty;
     var cssText;
-    var pauseHTML;
-
+    var para=[]; 
+    var pLength=0;
+    var nodeIndex=0;
 
 
     function makeContainer(){
@@ -64,25 +64,6 @@
       pre.style.marginRight=-center+"px";
     }
 
-
-    function highlight(){
-      var node=globalNode;
-      pauseHTML=node.innerHTML;
-      var htmlArr = pauseHTML.split(/\s+/);
-      var ind = i-1;
-      var curr;
-      while((curr=htmlArr[ind].indexOf(globalWord))===-1) ind++;
-      var start = curr;
-      var end = start+globalWord.length;
-      htmlArr.splice(ind,1,htmlArr[ind].slice(0,start)+'<span class="spreeHL">'+globalWord+'</span>'+htmlArr[ind].slice(end));  
-      //loop through pauseHTML matches of /\s+/ building a string with htmlArr
-    }
-
-
-    function clearHighlight(){
-      globalNode.innerHTML=pauseHTML;
-      pauseHTML="";
-    }
 
 
     function checkPause(){
@@ -160,6 +141,54 @@
     }
 
 
+    function highlight(){
+      var textObj = para[nodeIndex];
+
+      var words=textObj.words;
+      var gaps = textObj.gaps;
+      var text = textObj.text;
+      var node = textObj.node;
+      
+      var hlInd = i-1;
+      var hlWord = textObj.words[hlInd];
+      var firstPart = empty;
+      var secondPart = empty
+      for(var ind=0;ind<hlInd;ind++){
+         firstPart+= gaps[ind]+words[ind];
+      }
+      firstPart+=gaps[hlInd]
+      for(ind = hlInd+1;ind<gaps.length;ind++){
+        var addition = gaps[ind];
+        if (words[ind]) addition += words[ind]
+        secondPart+=addition;
+      }
+      var firstNode=D.createTextNode(firstPart);
+      var secondNode=D.createTextNode(secondPart);
+      
+      var hlNode=D.createElement('span');
+      hlNode.className='spreeHL';
+      hlNode.innerText=hlWord;
+       
+      globalNode.insertBefore(firstNode,node);
+      globalNode.insertBefore(hlNode,node);
+      globalNode.insertBefore(secondNode,node);
+      globalNode.removeChild(node);
+
+    }
+
+
+    function clearHighlight(){
+      var hlNode = D.getElementsByClassName("spreeHL")[0];
+      var firstNode = hlNode.previousSibling;
+      var secondNode = hlNode.nextSibling;
+
+      globalNode.insertBefore(para[nodeIndex].node,firstNode);
+      globalNode.removeChild(firstNode);
+      globalNode.removeChild(hlNode);
+      globalNode.removeChild(secondNode);
+    }
+
+
     function checkSkip(node){
       var tag = node.tagName;
       if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
@@ -170,31 +199,34 @@
           checkSkip(nodes[i])
       }else{
         if(node.nodeType === 3){
-          currText+=' '+node.nodeValue;
+          para.push(
+              {words:node.nodeValue.split(/\s+/),
+               gaps:node.nodeValue.split(/\S+/),
+               node:node
+              });
         }
       }
-    }
+    } 
 
 
     function spree(node,box){
       var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
       checkSkip(node);
-      if(!currText.length){
+      if(!para.length){
         if(next) return setTimeout(function(){spree(next,box)});
         else return
       }
-
-
-      var words = currText.split(/\s+/);
+      pLength = para.length-1; 
+      var words = para[nodeIndex].words;
       var len=words.length;
-
+       
       i=0;
       globalNode = node;
 
       if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
         W.scrollTo(0,node.offsetTop+parentY-50)
 
-          cssText = node.style.cssText;
+      cssText = node.style.cssText;
       node.style.cssText = borderStyle;
 
       (function addWord(){
@@ -203,38 +235,48 @@
           checkPause.func=addWord;
           return;
         } 
-        if(i<len||leftovers.length){
+        if(nodeIndex<pLength||i<len||leftovers.length){
           var word;
           var offset=0;
           if(leftovers.length)
-        word = leftovers.shift();
-          else
-        word = words[i++];
-      if(word.length > 20)
-        word = splitWord(word);
+            word = leftovers.shift();
+          else{
+            if (i===len){
+              words = para[++nodeIndex].words;
+              len = words.length;
+              i = 0;
+            }
+            word = words[i++];
+          }
+          
+          if(word.length > 20)
+            word = splitWord(word);
 
-      if(word.length){
-        globalWord = word;
-        createText(word,box);
-        var first = word[0];
-        var last = word[word.length-1];
-        if(first===first.toUpperCase())offset += gap/1.5;
-        if(last===','||last===';')offset+=gap/5;
-        else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
-      }
+          if(word.length){
+            createText(word,box);
+            var first = word[0];
+            var last = word[word.length-1];
+            if(first===first.toUpperCase())offset += gap/1.5;
+            if(last===','||last===';')offset+=gap/5;
+            else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
+          }
 
-      var delay=gap+offset+word.length*8;
-      showDyn(delay);
-      setTimeout(addWord,delay);
+          var delay=gap+offset+word.length*8;
+          showDyn(delay);
+          setTimeout(addWord,delay);
         }else{
-          node.style.cssText=cssText;
-          currText=empty;
+          cleanup();
           if(next)
             setTimeout(function(){spree(next,box)});
         }
       })();
     }
-
+    
+    function cleanup(){
+      globalNode.style.cssText=cssText;
+      para.length = 0;
+      nodeIndex = 0;
+    }
 
     W.addEventListener("mousedown",function(e){
       if(e.target.tagName!=="SELECT"&&(e.button===0||(document.all&&e.button===1))){
@@ -256,9 +298,7 @@
             stopIt=1;
             paused=0;
             // if(pauseHTML)clearHighlight();
-            globalNode.style.cssText=cssText;
-            globalNode=null;
-            globalWord="";
+            cleanup();
             D.body.removeChild(box);
             D.body.removeChild(D.getElementById("spreewpm"));
             W.removeEventListener("keydown",key);
@@ -298,17 +338,17 @@
       var style = D.createElement("style");
       style.appendChild(D.createTextNode(""));
       D.head.appendChild(style);
-      
+
       var sheet = style.sheet;
       sheet.addRule(".spreeCon","position:fixed;color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;z-index:9999;background:#fffefc;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-family:Helvetica;font-weight:300",0);
       sheet.addRule(".spreeaftwrap","float:right;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
       sheet.addRule(".spreeaftwrap >span","float:left,line-height:100px",2);
-      sheet.addRule("#spreewpm","position:fixed;top:10px;right:10px;font-size:14px;font-family:Helvetica;background:#fffefc;padding:2px;box-shadow:0 1px 1px 0 #666;text-align:center;z-index:9999;color:#ffa500",3);
+      sheet.addRule("#spreewpm","position:fixed;top:10px;right:10px;width:auto;:height:auto;font-size:14px;font-family:Helvetica;background:#fffefc;padding:2px;box-shadow:0 1px 1px 0 #666;text-align:center;z-index:9999;color:#ffa500",3);
       sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',4)
       sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;bottom:0px;',5)
       sheet.addRule(".spreeHL","background-color:#FFC966;",6);
-      sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",7);
-      sheet.addRule(".spreeCon >span","line-height:100px",8);
+    sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",7);
+    sheet.addRule(".spreeCon >span","line-height:100px",8);
     })();
   }
 

@@ -349,8 +349,8 @@
         }
 
         var move = function(e){
-          var xdiff=e.clientX-x;
-          var ydiff=e.clientY-y;
+          var xdiff=e.pageX-x;
+          var ydiff=e.pageY-y;
           if(xdiff>10||xdiff<-10||ydiff>10||ydiff<-10){
             clearTimeout(timeout);
             W.removeEventListener("mousemove",move);

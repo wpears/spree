@@ -15,6 +15,7 @@
     var para=[]; 
     var pLength=0;
     var nodeIndex=0;
+    var pauseWord = " (code) "
 
 
     function makeContainer(){
@@ -36,6 +37,7 @@
 
 
     function createText(word,box){
+      var pausing = word === pauseWord;
       var focus=word.length/3>>0;
       var pre = D.createElement('span');
       var foc = D.createElement('span');
@@ -46,10 +48,13 @@
       foc.style.color="#ffa500";
       wrap.className='spreeaftwrap';
 
-      pre.innerText=word.slice(0,focus);
-      foc.innerText=word[focus];
-      aft.innerText=word.slice(focus+1);
-
+      if(pausing){
+        foc.innerText = word;
+      }else{
+        pre.innerText=word.slice(0,focus);
+        foc.innerText=word[focus];
+        aft.innerText=word.slice(focus+1);
+      }
       wrap.appendChild(foc);
       wrap.appendChild(aft);
 
@@ -61,18 +66,20 @@
       var center = foc.offsetWidth/-2;
       foc.style.marginLeft=center+"px";
       pre.style.marginRight=-center+"px";
+
+      if(pausing) checkPause(0)
     }
 
 
 
-    function checkPause(){
+    function checkPause(e){
       if(paused){
         paused=0;
-        clearHighlight();
+        if(e)clearHighlight();
         checkPause.func();
       }else{
         paused = 1;
-        highlight();
+        if(e)highlight();
       }
     }
     checkPause.func=function(){};
@@ -133,12 +140,16 @@
     }
 
 
-    function setParentOffset(node){
-      if (node === D.body)return;
-      parentY+=node.offsetTop;
-      setParentOffset(node.offsetParent); 
+    function getYOffset(node,val){
+      if (node === D.body)return val;
+      return getYOffset(node.offsetParent,val+node.offsetTop); 
     }
-   
+    
+
+     function getXOffset(node,val){
+      if (node === D.body)return val;
+      return getXOffset(node.offsetParent,val+node.offsetLeft); 
+    }
 
 
     function highlight(){
@@ -147,6 +158,7 @@
       var words=textObj.words;
       var gaps = textObj.gaps;
       var node = textObj.node;
+      if(!node) return;
       var parNode = node.parentNode; 
 
       var hlInd = i-1;
@@ -193,7 +205,8 @@
 
     function checkSkip(node){
       var tag = node.tagName;
-      if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
+      if(tag == "PRE")para.push({words:[pauseWord],gaps:["",""],node:node})
+      if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
       var nodes = node.childNodes
         , len=nodes.length;
       if(len){ 
@@ -281,12 +294,23 @@
     }
 
     W.addEventListener("mousedown",function(e){
-      if(e.target.tagName!=="SELECT"&&(e.button===0||(document.all&&e.button===1))){
-        var x = e.screenX;
-        var y = e.screenY;
+      var node = e.target;
+      if(node.tagName !== "HTML"&&node.tagName!=="SELECT"&&(e.button===0||(document.all&&e.button===1))){
+        var x = e.pageX;
+        var y = e.pageY;
+        var width = node.clientWidth;
+        var height = node.clientHeight;
+        if(!width){
+          width = node.offsetWidth;
+          height = node.offsetHeight;
+        }
+        var yOffset = getYOffset(node, 0);
+        var xOffset = getXOffset(node, 0);
+        if(x-xOffset > width||y-yOffset>height)return;
+
         var timeout=setTimeout(function(){
           stopIt=0;
-          setParentOffset(e.target.offsetParent);
+          parentY = getYOffset(node.offsetParent, 0);
           setBorderStyle(e.target);
           innerHeight = W.innerHeight;
           var box=makeContainer();
@@ -312,7 +336,7 @@
             e.preventDefault();
             var code = e.keyCode;
             if(code===38||code===40)return setSpeed(code);
-            if(code===32)return checkPause();
+            if(code===32)return checkPause(1);
             if(code===37)return rewind();
             stop();
           }
@@ -325,8 +349,8 @@
         }
 
         var move = function(e){
-          var xdiff=e.screenX-x;
-          var ydiff=e.screenY-y;
+          var xdiff=e.clientX-x;
+          var ydiff=e.clientY-y;
           if(xdiff>10||xdiff<-10||ydiff>10||ydiff<-10){
             clearTimeout(timeout);
             W.removeEventListener("mousemove",move);

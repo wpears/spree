@@ -11,7 +11,6 @@
     var paused=0;
     var borderStyle="border-left:3px solid #ffa500;padding-left:10px;";
     var globalNode;
-    var currText=empty;
     var cssText;
     var para=[]; 
     var pLength=0;
@@ -139,6 +138,7 @@
       parentY+=node.offsetTop;
       setParentOffset(node.offsetParent); 
     }
+   
 
 
     function highlight(){
@@ -146,9 +146,9 @@
 
       var words=textObj.words;
       var gaps = textObj.gaps;
-      var text = textObj.text;
       var node = textObj.node;
-      
+      var parNode = node.parentNode; 
+
       var hlInd = i-1;
       var hlWord = textObj.words[hlInd];
       var firstPart = empty;
@@ -168,24 +168,26 @@
       var hlNode=D.createElement('span');
       hlNode.className='spreeHL';
       hlNode.innerText=hlWord;
-       
-      globalNode.insertBefore(firstNode,node);
-      globalNode.insertBefore(hlNode,node);
-      globalNode.insertBefore(secondNode,node);
-      globalNode.removeChild(node);
+      parNode.insertBefore(firstNode,node);
+      parNode.insertBefore(hlNode,node);
+      parNode.insertBefore(secondNode,node);
+      parNode.removeChild(node);
 
     }
 
 
     function clearHighlight(){
       var hlNode = D.getElementsByClassName("spreeHL")[0];
+      if(!hlNode)return;
       var firstNode = hlNode.previousSibling;
       var secondNode = hlNode.nextSibling;
+      var node = para[nodeIndex].node;
+      var parNode = hlNode.parentNode; 
 
-      globalNode.insertBefore(para[nodeIndex].node,firstNode);
-      globalNode.removeChild(firstNode);
-      globalNode.removeChild(hlNode);
-      globalNode.removeChild(secondNode);
+      parNode.insertBefore(node,firstNode);
+      parNode.removeChild(firstNode);
+      parNode.removeChild(hlNode);
+      parNode.removeChild(secondNode);
     }
 
 
@@ -296,8 +298,9 @@
 
           function stop(){
             stopIt=1;
+            parentY=0;
             paused=0;
-            // if(pauseHTML)clearHighlight();
+            clearHighlight();
             cleanup();
             D.body.removeChild(box);
             D.body.removeChild(D.getElementById("spreewpm"));

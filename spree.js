@@ -1,5 +1,4 @@
 (function(W,D){
-
   function main(){
     var i=0;
     var bd = D.body; 
@@ -28,6 +27,10 @@
     var colorIndex = 0;
     var pauseWord = " (code) "
 
+    chrome.storage.sync.get(null,function(obj){
+      if(obj.gap) gap = obj.gap;
+      if(obj.colorIndex) colorIndex = obj.colorIndex;
+    });
 
     function setBorderStyle(node){
       var s = W.getComputedStyle(node)
@@ -93,6 +96,7 @@
       if(code===38)gap-=factor;
       else gap+=factor;
       if(gap<10)gap=10;
+      chrome.storage.sync.set({gap:gap})
       var wpm = 60000/(gap+50);
       updateWpm(wpm);
     }
@@ -191,7 +195,7 @@
         rules[17].style.color = colors[index];
         rules[8].style.backgroundColor = backgroundColors[index];
         borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
-        globalNode.style.cssText = borderStyle;
+        if(globalNode)globalNode.style.cssText = borderStyle;
       }
     }
 
@@ -207,6 +211,7 @@
 
     function mouseDownColorSet(e){
       colorIndex = indexOf.call(colorSquares,e.target);
+      chrome.storage.sync.set({colorIndex:colorIndex});
     }
     
     function updateWpm(wpm){ 
@@ -386,6 +391,7 @@
           stopIt=0;
           parentY = getYOffset(node.offsetParent, 0);
           setBorderStyle(node);
+          setColor(colorIndex);
           innerHeight = W.innerHeight;
 
           var box=addPane(box,{
@@ -430,6 +436,14 @@
 
           function mouse(){           
               toggleControls(0);
+              W.addEventListener("mousedown",tog);
+          }
+
+          function tog(e){
+                if(e.target !== controls&&e.target.className !== "spreeColor"){
+                  toggleControls(1);
+                  W.removeEventListener("mousedown",tog)
+                }
           }
 
           function key(e){

@@ -366,8 +366,13 @@
       })();
     }
 
-    function cleanup(){
+    function removeBorder(){
       globalNode.style.cssText=cssText;
+    }
+
+    function cleanup(){
+      removeBorder();
+      globalNode = null;
       para.length = 0;
       nodeIndex = 0;
     }
@@ -483,8 +488,8 @@
 
       var sheet = style.sheet;
       sheet.addRule("#spreeCon","color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-weight:300;padding:0;",0);
-      sheet.addRule(".spreeaftwrap","float:right;border:0;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
-      sheet.addRule(".spreeaftwrap >span","float:left,line-height:100px",2);
+      sheet.addRule(".spreeaftwrap","float:right;font-size:36px;border:0;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
+      sheet.addRule(".spreeaftwrap >span","float:left;line-height:100px;font-size:36px;",2);
       sheet.addRule("#spreewpm","top:10px;left:10px;",3);
       sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4);
       sheet.addRule('#spreeControls:hover','cursor:pointer',5)

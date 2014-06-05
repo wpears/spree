@@ -491,10 +491,10 @@
       sheet.addRule(".spreeaftwrap","float:right;font-size:36px;border:0;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
       sheet.addRule(".spreeaftwrap >span","float:left;line-height:100px;font-size:36px;",2);
       sheet.addRule("#spreewpm","top:10px;left:10px;",3);
-      sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4);
+      sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4); 
       sheet.addRule('#spreeControls:hover','cursor:pointer',5)
-      sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;',6)
-      sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 1px solid #666;height: 25px;position:absolute;left: 249px;bottom:0px;',7)
+      sheet.addRule(".spreeaftwrap>span:before",'content: "";width: 0;height: 0;border-left: 2px solid transparent;border-right: 2px solid transparent;border-top: 25px solid #666;position:absolute;left: 248px;',6)
+      sheet.addRule(".spreeaftwrap>span:after",'content: "";width: 0;height: 0;border-left: 2px solid transparent;border-right: 2px solid transparent;border-bottom: 25px solid #666;position:absolute;left: 248px;bottom:0px;',7)
       sheet.addRule(".spreeHL","background-color:#ffd530;",8);
       sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",9);
       sheet.addRule(".spreeCon >span","line-height:100px",10);
@@ -505,6 +505,7 @@
       sheet.addRule("#colorDiv:hover","cursor:pointer;",15);
       sheet.addRule(".spreeColor:active","opacity:0.7",16);
       sheet.addRule(".spreeText","color:#ffa500;",17);
+      sheet.addRule(".adown")
 
       return sheet;
     })();

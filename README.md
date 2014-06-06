@@ -6,8 +6,8 @@
 
 ### Controls
 
-* Activate by holding down your mouse for one second over the text you want to read.
+* Activate by alt+clicking with your mouse.
 * Use the up and down arrows to change the text speed.
 * Use the back arrow to rewind ten words.
 * Pause with the spacebar.
-* Quit Spree with any other key or click.
+* Quit Spree with any key.

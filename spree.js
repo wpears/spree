@@ -18,6 +18,7 @@
     var paused=0;
     var borderStyle;
     var globalNode;
+    var lastMouseEvent;
     var cssText;
     var para=[];
     var pLength=0;
@@ -31,6 +32,9 @@
       if(obj.gap) gap = obj.gap;
       if(obj.colorIndex) colorIndex = obj.colorIndex;
     });
+    chrome.runtime.onMessage.addListener(function(){
+      startSpree();
+    })
 
     function setBorderStyle(node){
       var s = W.getComputedStyle(node)
@@ -378,107 +382,91 @@
     }
 
     W.addEventListener("mousedown",function(e){
-      var node = e.target;
-      if(node.tagName !== "HTML"&&node.tagName!=="SELECT"&&(e.button===0||(document.all&&e.button===1))){
-        var x = e.pageX;
-        var y = e.pageY;
-        var width = node.clientWidth;
-        var height = node.clientHeight;
-        if(!width){
-          width = node.offsetWidth;
-          height = node.offsetHeight;
-        }
-        var yOffset = getYOffset(node, 0);
-        var xOffset = getXOffset(node, 0);
-        if(x-xOffset > width||y-yOffset>height)return;
-
-        var timeout=setTimeout(function(){
-          stopIt=0;
-          parentY = getYOffset(node.offsetParent, 0);
-          setBorderStyle(node);
-          setColor(colorIndex);
-          innerHeight = W.innerHeight;
-
-          var box=addPane(box,{
-            id: "spreeCon",
-            className: "spreeAtop spreeText",
-            innerHTML: "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>"
-          });
-          controls = addPane(controls,{
-            id:'spreeControls',
-            className:'spreeAtop spreeText',
-            innerText :"Controls \u25BE"
-          });
-          controlPane = addPane(controlPane,{
-            id:'spreeControlPane',
-            className:'spreeAtop spreeText'
-          });
-          wpmDiv = addPane(wpmDiv, {
-            id:'spreewpm',
-            className:'spreeAtop spreeText'
-          });
-
-          updateWpm(60000/(gap+50));
-          setTimeout(function(){spree(node,box)},500);
-
-          W.addEventListener("keydown",key);
-          controls.addEventListener("mousedown",mouse);
-
-          function stop(){
-            stopIt=1;
-            parentY=0;
-            paused=0;
-            clearHighlight();
-            cleanup();
-            toggleControls(1);
-            bd.removeChild(box);
-            bd.removeChild(wpmDiv);
-            bd.removeChild(controls);
-            bd.removeChild(controlPane);
-            W.removeEventListener("keydown",key);
-            controls.removeEventListener("mousedown",mouse);
-          }
-
-          function mouse(){
-              toggleControls(0);
-              W.addEventListener("mousedown",tog);
-          }
-
-          function tog(e){
-                if(e.target !== controls&&e.target.className !== "spreeColor"){
-                  toggleControls(1);
-                  W.removeEventListener("mousedown",tog)
-                }
-          }
-
-          function key(e){
-            e.preventDefault();
-            var code = e.keyCode;
-            if(code===38||code===40)return setSpeed(code);
-            if(code===32)return checkPause(1);
-            if(code===37)return rewind();
-            stop();
-          }
-        },1000);
-
-        var up = function(){
-          clearTimeout(timeout);
-          W.removeEventListener("mouseup",up);
-          W.removeEventListener("mousemove",move)
-        }
-
-        var move = function(e){
-          var xdiff=e.pageX-x;
-          var ydiff=e.pageY-y;
-          if(xdiff>10||xdiff<-10||ydiff>10||ydiff<-10){
-            clearTimeout(timeout);
-            W.removeEventListener("mousemove",move);
-          }
-        }
-        W.addEventListener("mouseup",up);
-        W.addEventListener("mousemove",move)
-      }
+      lastMouseEvent = e;
     });
+
+    function startSpree(){
+      var e = lastMouseEvent;
+      var node = e.target;
+      var x = e.pageX;
+      var y = e.pageY;
+      var width = node.clientWidth;
+      var height = node.clientHeight;
+      if(!width){
+        width = node.offsetWidth;
+        height = node.offsetHeight;
+      }
+      var yOffset = getYOffset(node, 0);
+      var xOffset = getXOffset(node, 0);
+      if(x-xOffset > width||y-yOffset>height)return;
+
+      stopIt=0;
+      parentY = getYOffset(node.offsetParent, 0);
+      setBorderStyle(node);
+      setColor(colorIndex);
+      innerHeight = W.innerHeight;
+
+      var box=addPane(box,{
+        id: "spreeCon",
+        className: "spreeAtop spreeText",
+        innerHTML: "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>"
+      });
+      controls = addPane(controls,{
+          id:'spreeControls',
+          className:'spreeAtop spreeText',
+          innerText :"Controls \u25BE"
+      });
+      controlPane = addPane(controlPane,{
+        id:'spreeControlPane',
+        className:'spreeAtop spreeText'
+      });
+      wpmDiv = addPane(wpmDiv, {
+        id:'spreewpm',
+        className:'spreeAtop spreeText'
+      });
+
+      updateWpm(60000/(gap+50));
+      setTimeout(function(){spree(node,box)},500);
+
+      W.addEventListener("keydown",key);
+      controls.addEventListener("mousedown",mouse);
+    }
+
+        function stop(){
+          stopIt=1;
+          parentY=0;
+          paused=0;
+          clearHighlight();
+          cleanup();
+          toggleControls(1);
+          bd.removeChild(box);
+          bd.removeChild(wpmDiv);
+          bd.removeChild(controls);
+          bd.removeChild(controlPane);
+          W.removeEventListener("keydown",key);
+          controls.removeEventListener("mousedown",mouse);
+        }
+
+        function mouse(){
+          toggleControls(0);
+          W.addEventListener("mousedown",tog);
+        }
+
+        function tog(e){
+          if(e.target !== controls&&e.target.className !== "spreeColor"){
+            toggleControls(1);
+            W.removeEventListener("mousedown",tog)
+          }
+        }
+
+        function key(e){
+          e.preventDefault();
+          var code = e.keyCode;
+          if(code===38||code===40)return setSpeed(code);
+          if(code===32)return checkPause(1);
+          if(code===37)return rewind();
+          stop();
+        }
 
     spreeSheet =
     (function() {
@@ -491,7 +479,7 @@
       sheet.addRule(".spreeaftwrap","float:right;font-size:36px;border:0;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
       sheet.addRule(".spreeaftwrap >span","float:left;line-height:100px;font-size:36px;",2);
       sheet.addRule("#spreewpm","top:10px;left:10px;",3);
-      sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4); 
+      sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4);
       sheet.addRule('#spreeControls:hover','cursor:pointer',5)
       sheet.addRule(".spreeaftwrap>span:before",'content: "";width: 0;height: 0;border-left: 2px solid transparent;border-right: 2px solid transparent;border-top: 25px solid #666;position:absolute;left: 248px;',6)
       sheet.addRule(".spreeaftwrap>span:after",'content: "";width: 0;height: 0;border-left: 2px solid transparent;border-right: 2px solid transparent;border-bottom: 25px solid #666;position:absolute;left: 248px;bottom:0px;',7)
@@ -505,7 +493,6 @@
       sheet.addRule("#colorDiv:hover","cursor:pointer;",15);
       sheet.addRule(".spreeColor:active","opacity:0.7",16);
       sheet.addRule(".spreeText","color:#ffa500;",17);
-      sheet.addRule(".adown")
 
       return sheet;
     })();

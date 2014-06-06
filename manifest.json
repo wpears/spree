@@ -4,12 +4,15 @@
   "description":"Speed read web text without having to move your eyes.",
   "version":"1.8.2",
   "icons":{"16":"16.png","48":"48.png","128":"128.png"},
-  "permissions":["storage"],
+  "permissions":["storage","contextMenus","tabs"],
   "content_scripts": [
     {
       "matches": ["*://*/*"],
       "js":["spree.min.js"],
       "run_at":"document_start"
     }
-  ]
+  ],
+  "background":{
+    "scripts":["context.js"]
+  }
 }

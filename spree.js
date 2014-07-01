@@ -242,7 +242,8 @@
 
     function highlight(){
       var textObj = para[nodeIndex];
-
+      if(!textObj) return;
+      
       var words=textObj.words;
       var gaps = textObj.gaps;
       var node = textObj.node;
@@ -379,12 +380,15 @@
       if(globalNode) globalNode.style.cssText=cssText;
     }
 
+    function setStartText(){
+      mainContainer.innerHTML="<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>"
+    }
+
     function cleanup(){
       removeBorder();
       globalNode = null;
       para.length = 0;
-      nodeIndex = 0;
-      mainContainer.innerHTML="<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>"
+      nodeIndex = 0;     
     }
 
     W.addEventListener("mousedown",function(e){
@@ -450,6 +454,7 @@
     paused=0;
     clearHighlight();
     cleanup();
+    setStartText();
     toggleControls(1);
     bd.removeChild(mainContainer);
     bd.removeChild(wpmDiv);

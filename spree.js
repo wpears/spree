@@ -393,7 +393,15 @@
 
     W.addEventListener("mousedown",function(e){
       var node = e.target;
-      if(e.altKey===true&&active===0&&node.tagName !== "HTML"&&node.tagName!=="SELECT"&&(e.button===0||(document.all&&e.button===1))){
+      var tag = node.tagName;
+      if(  e.altKey === true
+        && active === 0
+        && tag !== "HTML"
+        && tag !== "SELECT"
+        && tag !== "INPUT"
+        && tag !== "TEXTAREA"
+        && (e.button===0||(document.all&&e.button===1))
+      ){
         var x = e.pageX;
         var y = e.pageY;
         var width = node.clientWidth;

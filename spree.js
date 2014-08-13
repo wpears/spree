@@ -1,8 +1,8 @@
 (function(W,D){
   function main(){
-    var i=0;
+    var wordNumber=0;
     var active = 0;
-    var bd = D.body;
+    var body = D.body;
     var gap = 100;
     var stopIt=0;
     var firstRun=1;
@@ -110,8 +110,8 @@
 
 
     function rewind(){
-      i-=10;
-      if (i<0)i=0;
+      wordNumber-=10;
+      if (wordNumber < 0) wordNumber = 0;
     }
 
 
@@ -134,7 +134,7 @@
       showDyn.arr.push(delay);
       if (showDyn.arr.length === 50){
         var sum=0;
-        for(var i=0;i<50;i++){
+        for(var i=0; i<50; i++){
           sum+=showDyn.arr[i];
         }
         updateWpm(60000/(sum/50));
@@ -151,12 +151,12 @@
         elem[prop] = obj[prop];
       }
     }
-    bd.appendChild(elem);
+    body.appendChild(elem);
     return elem;
   }
 
   function showPane(node){
-    bd.appendChild(node);
+    body.appendChild(node);
     return node;
   }
 
@@ -229,13 +229,13 @@
 
 
     function getYOffset(node,val){
-      if (node === bd||node===null)return val;
+      if (node === body||node===null)return val;
       return getYOffset(node.offsetParent,val+node.offsetTop);
     }
 
 
      function getXOffset(node,val){
-      if (node === bd||node===null)return val;
+      if (node === body||node===null)return val;
       return getXOffset(node.offsetParent,val+node.offsetLeft);
     }
 
@@ -250,7 +250,7 @@
       if(!node) return;
       var parNode = node.parentNode;
 
-      var hlInd = i-1;
+      var hlInd = wordNumber-1;
       var hlWord = textObj.words[hlInd];
       var firstPart = empty;
       var secondPart = empty
@@ -299,7 +299,7 @@
       var nodes = node.childNodes
         , len=nodes.length;
       if(len){
-        for(var i=0;i<len;i++)
+        for(var i=0; i<len; i++)
           checkSkip(nodes[i])
       }else{
         if(node.nodeType === 3){
@@ -324,7 +324,7 @@
       var words = para[nodeIndex].words;
       var len=words.length;
 
-      i=0;
+      wordNumber=0;
       globalNode = node;
 
       if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
@@ -339,18 +339,18 @@
           checkPause.func=addWord;
           return;
         }
-        if(nodeIndex<pLength||i<len||leftovers.length){
+        if(nodeIndex<pLength || wordNumber<len || leftovers.length){
           var word;
           var offset=0;
           if(leftovers.length)
             word = leftovers.shift();
           else{
-            if (i===len){
+            if (wordNumber === len){
               words = para[++nodeIndex].words;
               len = words.length;
-              i = 0;
+              wordNumber  = 0;
             }
-            word = words[i++];
+            word = words[wordNumber++];
           }
 
           if(word.length > 20)
@@ -464,10 +464,10 @@
     cleanup();
     setStartText();
     toggleControls(1);
-    bd.removeChild(mainContainer);
-    bd.removeChild(wpmDiv);
-    bd.removeChild(controls);
-    bd.removeChild(controlPane);
+    body.removeChild(mainContainer);
+    body.removeChild(wpmDiv);
+    body.removeChild(controls);
+    body.removeChild(controlPane);
     mainContainer.innerHTML = containerText;
     W.removeEventListener("keydown",key);
     controls.removeEventListener("mousedown",mouse);

@@ -1,36 +1,52 @@
 (function(W,D){
   function main(){
-    var wordNumber=0;
-    var active = 0;
+    /**DOM Handles**/
     var body = D.body;
-    var gap = 100;
-    var stopIt=0;
-    var firstRun=1;
-    var empty = '';
-    var leftovers=[];
-    var innerHeight;
-    var spreeSheet;
-    var parentY=0;
-    var toggleControls;
-    var colorSquares;
-    var indexOf = Array.prototype.indexOf;
-    var wpmDiv;
     var mainContainer;
-    var containerText = "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>";
+    var globalNode;
     var controls;
     var controlPane;
-    var paused=0;
-    var borderStyle;
-    var globalNode;
-    var cssText;
-    var para=[];
-    var pLength=0;
+    var wpmDiv;
+    var colorSquares;
+
+
+    /**To be assigned closures**/ 
+    var spreeSheet;
+    var toggleControls;
+
+
+    /**Counts, indexes, offsets**/
+    var wordNumber=0;
+    var gap = 100;
+    var parentY=0;
+    var colorIndex = 0;
     var nodeIndex=0;
+
+    
+    /**Flags**/ 
+    var active = 0;
+    var paused=0;
+    var firstRun=1;
+    var stopIt=0;
+    
+    
+    /**Tracking Arrays**/ 
+    var para=[];
+    var leftovers=[];
+
+
+    /**Style shortcuts**/
+    var containerText = "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>";
+    var borderStyle;
+    var cssText;
     var colors = ["#FFA500","#99793D","#FF6200","#40FFCE","#00FF76","#FFCF40","#1500FF","#773D99","#A000FF","#FF8700","#5E3D99","#444444","#00B5FF","#998B3D","#00F8FF","#FF0F26"];
     var backgroundColors = ["#ffd530", "#c9a96d", "#ff9230", "#70fffe", "#30ffa6", "#ffff70", "#4530ff", "#a76dc9", "#d030ff", "#ffb730", "#8e6dc9", "#747474", "#30e5ff", "#c9bb6d", "#30ffff", "#ff3f56"];
-    var colorIndex = 0;
     var pauseWord = " (code) ";
+    /**Convenience**/ 
 
+
+    var innerHeight;
+    var indexOf = Array.prototype.indexOf;
     if(chrome&&chrome.storage){
       chrome.storage.sync.get(null,function(obj){
         if(obj.gap) gap = obj.gap;
@@ -252,8 +268,8 @@
 
       var hlInd = wordNumber-1;
       var hlWord = textObj.words[hlInd];
-      var firstPart = empty;
-      var secondPart = empty
+      var firstPart = '';
+      var secondPart = ''; 
       for(var ind=0;ind<hlInd;ind++){
          firstPart+= gaps[ind]+words[ind];
       }
@@ -320,7 +336,7 @@
         if(next) return setTimeout(function(){spree(next,box)});
         else return
       }
-      pLength = para.length-1;
+      var pLength = para.length-1;
       var words = para[nodeIndex].words;
       var len=words.length;
 

@@ -10,11 +10,6 @@
     var colorSquares;
 
 
-    /**To be assigned closures**/ 
-    var spreeSheet;
-    var toggleControls;
-
-
     /**Counts, indexes, offsets**/
     var wordNumber=0;
     var gap = 100;
@@ -22,14 +17,14 @@
     var colorIndex = 0;
     var nodeIndex=0;
 
-    
+
     /**Flags**/ 
     var active = 0;
     var paused=0;
     var firstRun=1;
     var stopIt=0;
-    
-    
+
+
     /**Tracking Arrays**/ 
     var para=[];
     var leftovers=[];
@@ -42,17 +37,140 @@
     var colors = ["#FFA500","#99793D","#FF6200","#40FFCE","#00FF76","#FFCF40","#1500FF","#773D99","#A000FF","#FF8700","#5E3D99","#444444","#00B5FF","#998B3D","#00F8FF","#FF0F26"];
     var backgroundColors = ["#ffd530", "#c9a96d", "#ff9230", "#70fffe", "#30ffa6", "#ffff70", "#4530ff", "#a76dc9", "#d030ff", "#ffb730", "#8e6dc9", "#747474", "#30e5ff", "#c9bb6d", "#30ffff", "#ff3f56"];
     var pauseWord = " (code) ";
+
+
     /**Convenience**/ 
-
-
     var innerHeight;
     var indexOf = Array.prototype.indexOf;
+
+
+    var toggleControls=function(){
+      var showing = 0;
+      var firstCall = 1;
+      return function (force){
+        if(firstCall){
+          buildControlPane();
+          firstCall = 0;
+        }
+        if(showing||force){
+          controls.innerText = "Controls \u25BE";
+          controlPane.style.cssText ="width:0;height:0;";
+          showing = 0;
+        }else{
+          controls.innerText = "Controls \u25B4";
+          controlPane.style.cssText = "width:140px;height:140px";
+          showing = 1;
+        }
+      }
+    }();
+
+
+    var spreeSheet = (function() {
+      var style = D.createElement("style");
+      style.appendChild(D.createTextNode(""));
+      D.head.appendChild(style);
+
+      var sheet = style.sheet;
+      sheet.addRule("#spreeCon","color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-weight:300;padding:0;",0);
+      sheet.addRule(".spreeaftwrap","float:right;font-size:36px;border:0;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
+      sheet.addRule(".spreeaftwrap >span","float:left;line-height:100px;font-size:36px;",2);
+      sheet.addRule("#spreewpm","top:10px;left:10px;",3);
+      sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4);
+      sheet.addRule('#spreeControls:hover','cursor:pointer',5)
+      sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 2px solid transparent;border-right:2px solid transparent; border-top:25px solid #666;height: 0;width:0;position:absolute;left: 247px;',6)
+      sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 2px solid transparent;border-right:2px solid transparent; border-bottom:25px solid #666;height:0;width:0;position:absolute;left: 248px;bottom:0px;',7)
+      sheet.addRule(".spreeHL","background-color:#ffd530;",8);
+      sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",9);
+      sheet.addRule(".spreeCon >span","line-height:100px",10);
+      sheet.addRule("#spreeControlPane","top:33px;right:10px;width:0;height:0;overflow:hidden;padding:0;box-shadow:0px 2px 1px -1px #666;-webkit-transition: height 0.1s ease-out,width 0.1s ease-out;-moz-transition: height 0.1s ease-out,width 0.1s ease-out;-o-transition: height 0.1s ease-out,width 0.1s ease-out;transition: height 0.1s ease-out,width 0.1s ease-out;",11);
+      sheet.addRule(".spreeAtop","position:fixed;background:#fffefc;text-align:center;box-shadow:0 1px 1px 0 #666;z-index:591233;padding:2px 4px;width:auto;height:auto;font-size:14px;font-family:Helvetica;",12)
+      sheet.addRule(".spreeColor","width:35px;height:35px;float:left;",13);
+      sheet.addRule("#colorDiv","width:140px;height:140px;background:#fffefc;float:right;margin:0;padding:0;border:0;",14)
+      sheet.addRule("#colorDiv:hover","cursor:pointer;",15);
+      sheet.addRule(".spreeColor:active","opacity:0.7",16);
+      sheet.addRule(".spreeText","color:#ffa500;",17);
+
+      return sheet;
+    })();
+
+
+    /**If using the extension, pull in saved settings**/
     if(chrome&&chrome.storage){
       chrome.storage.sync.get(null,function(obj){
         if(obj.gap) gap = obj.gap;
         if(obj.colorIndex) colorIndex = obj.colorIndex;
       });
     }
+
+
+    /**Added main listener, entrypoint into behavior**/
+    W.addEventListener("mousedown",function(e){
+      var node = e.target;
+      var tag = node.tagName;
+      if(  e.altKey === true
+        && active === 0
+        && tag !== "HTML"
+        && tag !== "SELECT"
+        && tag !== "INPUT"
+        && tag !== "TEXTAREA"
+        && (e.button===0||(document.all&&e.button===1))
+        ){
+          var x = e.pageX;
+          var y = e.pageY;
+          var width = node.clientWidth;
+          var height = node.clientHeight;
+          
+          if(!width){
+            width = node.offsetWidth;
+            height = node.offsetHeight;
+          }
+
+          var yOffset = getYOffset(node, 0);
+          var xOffset = getXOffset(node, 0);
+
+          if(x-xOffset > width||y-yOffset>height)return;
+
+          stopIt=0;
+          parentY = getYOffset(node.offsetParent, 0);
+          setBorderStyle(node);
+          setColor(colorIndex);
+          active=1;
+          innerHeight = W.innerHeight;
+          if(firstRun){
+            mainContainer = addPane({
+              id: "spreeCon",
+              className: "spreeAtop spreeText",
+              innerHTML: containerText
+            });
+            controls = addPane({
+              id:'spreeControls',
+                     className:'spreeAtop spreeText',
+                     innerText :"Controls \u25BE"
+            });
+            controlPane = addPane({
+              id:'spreeControlPane',
+                        className:'spreeAtop spreeText'
+            });
+            wpmDiv = addPane({
+              id:'spreewpm',
+                   className:'spreeAtop spreeText'
+            });
+            firstRun = 0;
+          }else{
+            showPane(mainContainer);
+            showPane(controls);
+            showPane(controlPane);
+            showPane(wpmDiv);
+          }
+
+          updateWpm(60000/(gap+50));
+          setTimeout(function(){spree(node,mainContainer)},500);
+
+          W.addEventListener("keydown",key);
+          controls.addEventListener("mousedown",mouse);
+        }
+    });
+
 
     function setBorderStyle(node){
       var s = W.getComputedStyle(node)
@@ -120,7 +238,7 @@
       if(gap<10)gap=10;
       if(chrome&&chrome.storage)
         chrome.storage.sync.set({gap:gap})
-      var wpm = 60000/(gap+50);
+          var wpm = 60000/(gap+50);
       updateWpm(wpm);
     }
 
@@ -160,41 +278,22 @@
     showDyn.arr=[];
 
 
-  function addPane(obj){
-    var elem = D.createElement('div');
-    for(var prop in obj){
-      if(obj.hasOwnProperty(prop)){
-        elem[prop] = obj[prop];
+    function addPane(obj){
+      var elem = D.createElement('div');
+      for(var prop in obj){
+        if(obj.hasOwnProperty(prop)){
+          elem[prop] = obj[prop];
+        }
       }
+      body.appendChild(elem);
+      return elem;
     }
-    body.appendChild(elem);
-    return elem;
-  }
 
-  function showPane(node){
-    body.appendChild(node);
-    return node;
-  }
+    function showPane(node){
+      body.appendChild(node);
+      return node;
+    }
 
-  toggleControls=function(){
-     var showing = 0;
-     var firstCall = 1;
-     return function (force){
-      if(firstCall){
-        buildControlPane();
-        firstCall = 0;
-      }
-      if(showing||force){
-        controls.innerText = "Controls \u25BE";
-        controlPane.style.cssText ="width:0;height:0;";
-        showing = 0;
-      }else{
-        controls.innerText = "Controls \u25B4";
-        controlPane.style.cssText = "width:140px;height:140px";
-        showing = 1;
-      }
-     }
-   }();
 
     function buildControlPane(){
       var colorDiv = D.createElement('div');
@@ -202,8 +301,8 @@
       colors.forEach(function(v){
         var node = D.createElement('div')
         node.className = "spreeColor";
-        node.style.backgroundColor = v;
-        colorDiv.appendChild(node);
+      node.style.backgroundColor = v;
+      colorDiv.appendChild(node);
       })
       controlPane.appendChild(colorDiv);
       colorSquares = colorDiv.children;
@@ -224,13 +323,13 @@
     }
 
     function mouseOverColorSet(e){
-        setColor(indexOf.call(colorSquares,e.target))
+      setColor(indexOf.call(colorSquares,e.target))
     }
 
     function mouseOutColorSet(e){
-        if(!e.toElement||e.toElement.className !== "spreeColor"){
-          setColor(colorIndex);
-        }
+      if(!e.toElement||e.toElement.className !== "spreeColor"){
+        setColor(colorIndex);
+      }
     }
 
     function mouseDownColorSet(e){
@@ -250,7 +349,7 @@
     }
 
 
-     function getXOffset(node,val){
+    function getXOffset(node,val){
       if (node === body||node===null)return val;
       return getXOffset(node.offsetParent,val+node.offsetLeft);
     }
@@ -259,7 +358,7 @@
     function highlight(){
       var textObj = para[nodeIndex];
       if(!textObj) return;
-      
+
       var words=textObj.words;
       var gaps = textObj.gaps;
       var node = textObj.node;
@@ -271,14 +370,14 @@
       var firstPart = '';
       var secondPart = ''; 
       for(var ind=0;ind<hlInd;ind++){
-         firstPart+= gaps[ind]+words[ind];
+        firstPart+= gaps[ind]+words[ind];
       }
       firstPart+=gaps[hlInd]
-      for(ind = hlInd+1;ind<gaps.length;ind++){
-        var addition = gaps[ind];
-        if (words[ind]) addition += words[ind]
-        secondPart+=addition;
-      }
+        for(ind = hlInd+1;ind<gaps.length;ind++){
+          var addition = gaps[ind];
+          if (words[ind]) addition += words[ind]
+            secondPart+=addition;
+        }
       var firstNode=D.createTextNode(firstPart);
       var secondNode=D.createTextNode(secondPart);
 
@@ -311,7 +410,7 @@
     function checkSkip(node){
       var tag = node.tagName;
       if(tag == "PRE")para.push({words:[pauseWord],gaps:["",""],node:node})
-      if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
+        if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
       var nodes = node.childNodes
         , len=nodes.length;
       if(len){
@@ -321,8 +420,8 @@
         if(node.nodeType === 3){
           para.push(
               {words:node.nodeValue.split(/\s+/),
-               gaps:node.nodeValue.split(/\S+/),
-               node:node
+                gaps:node.nodeValue.split(/\S+/),
+            node:node
               });
         }
       }
@@ -346,7 +445,7 @@
       if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
         W.scrollTo(0,node.offsetTop+parentY-50)
 
-      cssText = node.style.cssText;
+          cssText = node.style.cssText;
       node.style.cssText = borderStyle;
 
       (function addWord(){
@@ -359,7 +458,7 @@
           var word;
           var offset=0;
           if(leftovers.length)
-            word = leftovers.shift();
+        word = leftovers.shift();
           else{
             if (wordNumber === len){
               words = para[++nodeIndex].words;
@@ -369,21 +468,21 @@
             word = words[wordNumber++];
           }
 
-          if(word.length > 20)
-            word = splitWord(word);
+      if(word.length > 20)
+        word = splitWord(word);
 
-          if(word.length){
-            createText(word,box);
-            var first = word[0];
-            var last = word[word.length-1];
-            if(first===first.toUpperCase())offset += gap/1.5;
-            if(last===','||last===';')offset+=gap/5;
-            else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
-          }
+      if(word.length){
+        createText(word,box);
+        var first = word[0];
+        var last = word[word.length-1];
+        if(first===first.toUpperCase())offset += gap/1.5;
+        if(last===','||last===';')offset+=gap/5;
+        else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
+      }
 
-          var delay=gap+offset+word.length*8;
-          showDyn(delay);
-          setTimeout(addWord,delay);
+      var delay=gap+offset+word.length*8;
+      showDyn(delay);
+      setTimeout(addWord,delay);
         }else{
           cleanup();
           if(next)
@@ -407,140 +506,49 @@
       nodeIndex = 0;     
     }
 
-    W.addEventListener("mousedown",function(e){
-      var node = e.target;
-      var tag = node.tagName;
-      if(  e.altKey === true
-        && active === 0
-        && tag !== "HTML"
-        && tag !== "SELECT"
-        && tag !== "INPUT"
-        && tag !== "TEXTAREA"
-        && (e.button===0||(document.all&&e.button===1))
-      ){
-        var x = e.pageX;
-        var y = e.pageY;
-        var width = node.clientWidth;
-        var height = node.clientHeight;
-        if(!width){
-          width = node.offsetWidth;
-          height = node.offsetHeight;
-        }
-        var yOffset = getYOffset(node, 0);
-        var xOffset = getXOffset(node, 0);
-        if(x-xOffset > width||y-yOffset>height)return;
-
-          stopIt=0;
-          parentY = getYOffset(node.offsetParent, 0);
-          setBorderStyle(node);
-          setColor(colorIndex);
-          active=1;
-          innerHeight = W.innerHeight;
-        if(firstRun){
-          mainContainer = addPane({
-            id: "spreeCon",
-            className: "spreeAtop spreeText",
-            innerHTML: containerText
-          });
-          controls = addPane({
-            id:'spreeControls',
-            className:'spreeAtop spreeText',
-            innerText :"Controls \u25BE"
-          });
-          controlPane = addPane({
-            id:'spreeControlPane',
-            className:'spreeAtop spreeText'
-          });
-          wpmDiv = addPane({
-            id:'spreewpm',
-            className:'spreeAtop spreeText'
-          });
-          firstRun = 0;
-        }else{
-          showPane(mainContainer);
-          showPane(controls);
-          showPane(controlPane);
-          showPane(wpmDiv);
-        }
-
-          updateWpm(60000/(gap+50));
-          setTimeout(function(){spree(node,mainContainer)},500);
-
-          W.addEventListener("keydown",key);
-          controls.addEventListener("mousedown",mouse);
-      }
-  });
-
-  function stop(){
-    stopIt=1;
-    active = 0;
-    parentY=0;
-    paused=0;
-    clearHighlight();
-    cleanup();
-    setStartText();
-    toggleControls(1);
-    body.removeChild(mainContainer);
-    body.removeChild(wpmDiv);
-    body.removeChild(controls);
-    body.removeChild(controlPane);
-    mainContainer.innerHTML = containerText;
-    W.removeEventListener("keydown",key);
-    controls.removeEventListener("mousedown",mouse);
-  }
-
-  function mouse(){
-    toggleControls(0);
-    W.addEventListener("mousedown",tog);
-  }
-
-  function tog(e){
-    if(e.target !== controls&&e.target.className !== "spreeColor"){
+    function stop(){
+      stopIt=1;
+      active = 0;
+      parentY=0;
+      paused=0;
+      clearHighlight();
+      cleanup();
+      setStartText();
       toggleControls(1);
-      W.removeEventListener("mousedown",tog)
+      body.removeChild(mainContainer);
+      body.removeChild(wpmDiv);
+      body.removeChild(controls);
+      body.removeChild(controlPane);
+      mainContainer.innerHTML = containerText;
+      W.removeEventListener("keydown",key);
+      controls.removeEventListener("mousedown",mouse);
     }
+
+    function mouse(){
+      toggleControls(0);
+      W.addEventListener("mousedown",tog);
+    }
+
+    function tog(e){
+      if(e.target !== controls&&e.target.className !== "spreeColor"){
+        toggleControls(1);
+        W.removeEventListener("mousedown",tog)
+      }
+    }
+
+    function key(e){
+      e.preventDefault();
+      var code = e.keyCode;
+      if(code===18) return;
+      if(code===38||code===40)return setSpeed(code);
+      if(code===32)return checkPause(1);
+      if(code===37)return rewind();
+      stop();
+    }
+
   }
-
-  function key(e){
-    e.preventDefault();
-    var code = e.keyCode;
-    if(code===18) return;
-    if(code===38||code===40)return setSpeed(code);
-    if(code===32)return checkPause(1);
-    if(code===37)return rewind();
-    stop();
-  }
-
-  spreeSheet =
-    (function() {
-      var style = D.createElement("style");
-      style.appendChild(D.createTextNode(""));
-      D.head.appendChild(style);
-
-    var sheet = style.sheet;
-      sheet.addRule("#spreeCon","color:#444;width:600px;height:100px;top:50%;left:50%;margin:-50px 0 0 -300px;box-shadow:0 4px 6px -4px #666, 0 1px 2px 0 #666;text-align:left;font-size:36px;line-height:100px;font-weight:300;padding:0;",0);
-      sheet.addRule(".spreeaftwrap","float:right;font-size:36px;border:0;width:350px;line-height:100px;display:inline-block;background:#fffefc;",1);
-      sheet.addRule(".spreeaftwrap >span","float:left;line-height:100px;font-size:36px;",2);
-      sheet.addRule("#spreewpm","top:10px;left:10px;",3);
-      sheet.addRule("#spreeControls","top:10px;right:10px;-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;",4);
-      sheet.addRule('#spreeControls:hover','cursor:pointer',5)
-      sheet.addRule(".spreeaftwrap>span:before",'content: "";border-left: 2px solid transparent;border-right:2px solid transparent; border-top:25px solid #666;height: 0;width:0;position:absolute;left: 247px;',6)
-      sheet.addRule(".spreeaftwrap>span:after",'content: "";border-left: 2px solid transparent;border-right:2px solid transparent; border-bottom:25px solid #666;height:0;width:0;position:absolute;left: 248px;bottom:0px;',7)
-      sheet.addRule(".spreeHL","background-color:#ffd530;",8);
-      sheet.insertRule("@media screen and (max-width : 600px){.spreeCon{margin:-50px 0 0 0; width:100%;left:0}.spreeaftwrap{width:60%;}.spreeaftwrap>span:before,.spreeaftwrap>span:after{left:39.4%;}}",9);
-      sheet.addRule(".spreeCon >span","line-height:100px",10);
-      sheet.addRule("#spreeControlPane","top:33px;right:10px;width:0;height:0;overflow:hidden;padding:0;box-shadow:0px 2px 1px -1px #666;-webkit-transition: height 0.1s ease-out,width 0.1s ease-out;-moz-transition: height 0.1s ease-out,width 0.1s ease-out;-o-transition: height 0.1s ease-out,width 0.1s ease-out;transition: height 0.1s ease-out,width 0.1s ease-out;",11);
-      sheet.addRule(".spreeAtop","position:fixed;background:#fffefc;text-align:center;box-shadow:0 1px 1px 0 #666;z-index:591233;padding:2px 4px;width:auto;height:auto;font-size:14px;font-family:Helvetica;",12)
-      sheet.addRule(".spreeColor","width:35px;height:35px;float:left;",13);
-      sheet.addRule("#colorDiv","width:140px;height:140px;background:#fffefc;float:right;margin:0;padding:0;border:0;",14)
-      sheet.addRule("#colorDiv:hover","cursor:pointer;",15);
-      sheet.addRule(".spreeColor:active","opacity:0.7",16);
-      sheet.addRule(".spreeText","color:#ffa500;",17);
-
-      return sheet;
-    })();
-  }
-
+  
+  /**Run main once the DOM has loaded**/
   if(D.readyState === "loaded"||D.readyState === "complete") main();
   else W.addEventListener("DOMContentLoaded",main);
 })(window,document);

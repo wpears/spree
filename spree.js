@@ -21,8 +21,7 @@
     /**Flags**/ 
     var active = 0;
     var paused=0;
-    var firstRun=1;
-    var stopIt=0;
+    var stopSpree=0;
 
 
     /**Tracking Arrays**/ 
@@ -65,6 +64,7 @@
     }();
 
 
+    /**Dynamically add styles. Allows full app to work as a bookmarklet**/ 
     var spreeSheet = (function() {
       var style = D.createElement("style");
       style.appendChild(D.createTextNode(""));
@@ -103,74 +103,85 @@
     }
 
 
-    /**Added main listener, entrypoint into behavior**/
+    /**Added main listener, entry point into app**/
     W.addEventListener("mousedown",function(e){
       var node = e.target;
       var tag = node.tagName;
-      if(  e.altKey === true
-        && active === 0
-        && tag !== "HTML"
-        && tag !== "SELECT"
-        && tag !== "INPUT"
-        && tag !== "TEXTAREA"
-        && (e.button===0||(document.all&&e.button===1))
+
+      //Activate on alt-click, on sensible elements
+      if( e.altKey === true &&
+          active === 0  &&
+          tag !== "HTML" &&
+          tag !== "SELECT" &&
+          tag !== "INPUT" &&
+          tag !== "TEXTAREA" &&
+          (e.button===0||(document.all&&e.button===1))
         ){
-          var x = e.pageX;
-          var y = e.pageY;
-          var width = node.clientWidth;
-          var height = node.clientHeight;
-          
-          if(!width){
-            width = node.offsetWidth;
-            height = node.offsetHeight;
-          }
+          stopSpree=0; 
+          active=1;
 
-          var yOffset = getYOffset(node, 0);
-          var xOffset = getXOffset(node, 0);
-
-          if(x-xOffset > width||y-yOffset>height)return;
-
-          stopIt=0;
+          //query window/node state 
           parentY = getYOffset(node.offsetParent, 0);
+          innerHeight = W.innerHeight;
+
+
+          //apply preferences before display
           setBorderStyle(node);
           setColor(colorIndex);
-          active=1;
-          innerHeight = W.innerHeight;
-          if(firstRun){
-            mainContainer = addPane({
-              id: "spreeCon",
-              className: "spreeAtop spreeText",
-              innerHTML: containerText
-            });
-            controls = addPane({
-              id:'spreeControls',
-                     className:'spreeAtop spreeText',
-                     innerText :"Controls \u25BE"
-            });
-            controlPane = addPane({
-              id:'spreeControlPane',
-                        className:'spreeAtop spreeText'
-            });
-            wpmDiv = addPane({
-              id:'spreewpm',
-                   className:'spreeAtop spreeText'
-            });
-            firstRun = 0;
-          }else{
+
+
+          //initialize UI widgets on first activation, otherwise show them
+          if(mainContainer){
             showPane(mainContainer);
             showPane(controls);
             showPane(controlPane);
             showPane(wpmDiv);
+          }else{
+            initializeUI();
           }
 
+
+          //show speed and kick off word display 
           updateWpm(60000/(gap+50));
           setTimeout(function(){spree(node,mainContainer)},500);
 
+           
+          //add listeners for ui and interrupts
           W.addEventListener("keydown",key);
           controls.addEventListener("mousedown",mouse);
         }
     });
 
+
+    //create each UI component, saving them in app-wide variables 
+    function initializeUI(){
+
+      mainContainer = addPane({
+        id: "spreeCon",
+        className: "spreeAtop spreeText",
+        innerHTML: containerText
+      });
+
+
+      controls = addPane({
+        id:'spreeControls',
+        className:'spreeAtop spreeText',
+        innerText :"Controls \u25BE"
+      });
+
+
+      controlPane = addPane({
+        id:'spreeControlPane',
+        className:'spreeAtop spreeText'
+      });
+
+
+      wpmDiv = addPane({
+        id:'spreewpm',
+        className:'spreeAtop spreeText'
+      }); 
+    }
+    
 
     function setBorderStyle(node){
       var s = W.getComputedStyle(node)
@@ -349,12 +360,6 @@
     }
 
 
-    function getXOffset(node,val){
-      if (node === body||node===null)return val;
-      return getXOffset(node.offsetParent,val+node.offsetLeft);
-    }
-
-
     function highlight(){
       var textObj = para[nodeIndex];
       if(!textObj) return;
@@ -449,7 +454,7 @@
       node.style.cssText = borderStyle;
 
       (function addWord(){
-        if(stopIt)return;
+        if(stopSpree)return;
         if(paused){
           checkPause.func=addWord;
           return;
@@ -507,7 +512,7 @@
     }
 
     function stop(){
-      stopIt=1;
+      stopSpree=1;
       active = 0;
       parentY=0;
       paused=0;

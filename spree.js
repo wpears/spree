@@ -11,11 +11,11 @@
 
 
     /**Counts, indexes, offsets**/
-    var wordNumber=0;
+    var wordCount=0;
     var gap = 100;
     var parentY=0;
     var colorIndex = 0;
-    var nodeIndex=0;
+    var textNodeIndex=0;
 
 
     /**Flags**/ 
@@ -25,7 +25,7 @@
 
 
     /**Tracking Arrays**/ 
-    var para=[];
+    var paragraph=[];
     var leftovers=[];
 
 
@@ -108,7 +108,7 @@
       var node = e.target;
       var tag = node.tagName;
 
-      //Activate on alt-click, on sensible elements
+      /**Activate on alt-click, on sensible elements**/
       if( e.altKey === true &&
           active === 0  &&
           tag !== "HTML" &&
@@ -120,17 +120,17 @@
           stopSpree=0; 
           active=1;
 
-          //query window/node state 
+          /**query window/node state**/
           parentY = getYOffset(node.offsetParent, 0);
           innerHeight = W.innerHeight;
 
 
-          //apply preferences before display
+          /**apply preferences before display**/
           setBorderStyle(node);
           setColor(colorIndex);
 
 
-          //initialize UI widgets on first activation, otherwise show them
+          /**initialize UI widgets on first activation, otherwise show them**/
           if(mainContainer){
             showPane(mainContainer);
             showPane(controls);
@@ -141,19 +141,20 @@
           }
 
 
-          //show speed and kick off word display 
+          /**show speed and kick off word display**/
           updateWpm(60000/(gap+50));
           setTimeout(function(){spree(node,mainContainer)},500);
 
            
-          //add listeners for ui and interrupts
+          /**add listeners for ui and interrupts**/
           W.addEventListener("keydown",key);
           controls.addEventListener("mousedown",mouse);
         }
     });
 
+   
 
-    //create each UI component, saving them in app-wide variables 
+    /**create each UI component, saving them in app-wide variables **/
     function initializeUI(){
 
       mainContainer = addPane({
@@ -182,7 +183,17 @@
       }); 
     }
     
+    
 
+    /**reattach pre-generated nodes to the DOM**/
+    function showPane(node){
+      body.appendChild(node);
+      return node;
+    }
+
+
+
+    /**Apply paragraph-focusing border. Color set to color choice.**/
     function setBorderStyle(node){
       var s = W.getComputedStyle(node)
         , pd = +s.paddingLeft.slice(0,-2)
@@ -191,6 +202,107 @@
         ;
       borderStyle="margin-left:"+(pd+brd+mrg-13)+"px;padding-left:10px;border-left:3px solid "+colors[colorIndex]+";"
     }
+   
+
+
+    /**Apply color change to UI elements**/
+    function setColor(index){
+      if(index !== -1){
+        var rules = spreeSheet.rules;
+        rules[17].style.color = colors[index];
+        rules[8].style.backgroundColor = backgroundColors[index];
+        borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
+        if(globalNode)globalNode.style.cssText = borderStyle;
+      }
+    }
+
+
+
+    /**Word display function. Heart of the functionality**/
+    function spree(node,box){
+      
+      /**Walk the DOM for text nodes and store their values**/
+      fillParagraph(node);
+
+      var nextParagraph = node.nextElementSibling;
+      
+      /**Empty paragraph, move on or stop**/
+      if(!paragraph.length){
+        if(nextParagraph) return setTimeout(function(){spree(nextParagraph,box)});
+        else return
+      }
+      
+      var nodesInParagraph = paragraph.length-1;
+      var words = paragraph[textNodeIndex].words;
+      var nodeWordLength = words.length;
+
+      /**Update globals**/
+      wordCount=0;
+      globalNode = node;
+      cssText = node.style.cssText;
+      node.style.cssText = borderStyle;
+       
+      /**Scroll page when an offpage node is reached**/
+      if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY){
+        W.scrollTo(0,node.offsetTop+parentY-50);
+      }
+
+
+      /**Word display recursive loop**/
+      (function addWord(){
+        if(stopSpree)return;
+
+        if(paused){
+          /**pass closure to be called when unpaused**/
+          togglePause.callback=addWord;
+          return;
+        }
+       
+
+        /**Get next word, from this node, next node or from a split word**/ 
+        if(textNodeIndex < nodesInParagraph || wordCount < nodeWordLength || leftovers.length){
+          var word;
+          var offset=0;
+          
+          /**use leftover bits of previously split words first**/
+          if(leftovers.length)
+            word = leftovers.shift();
+          else{
+            if(wordCount === nodeWordLength){
+              words = paragraph[++textNodeIndex].words;
+              nodeWordLength = words.length;
+              wordCount  = 0;
+            }
+            word = words[wordCount++];
+          }
+
+          if(word.length > 20)
+            word = splitWord(word);
+
+          /**Add word and set offset modifiers**/
+          if(word.length){
+            createText(word,box);
+            var first = word[0];
+            var last = word[word.length-1];
+            if(first===first.toUpperCase())offset += gap/1.5;
+            if(last===','||last===';')offset+=gap/5;
+            else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
+          }
+          
+          /**Set delay until the next word's display and propagate to wpm calculation**/
+          var delay=gap+offset+word.length*8;
+          checkWpm(delay);
+          setTimeout(addWord,delay);
+
+        }else{
+          /**Clean shared variables, break from addWord loop, and run spree on the next paragraph**/
+          cleanup();
+          if(nextParagraph)
+            setTimeout(function(){spree(nextParagraph,box)},0);
+        }
+      })();
+    }
+
 
 
     function createText(word,box){
@@ -224,22 +336,22 @@
       foc.style.marginLeft=center+"px";
       pre.style.marginRight=-center+"px";
 
-      if(pausing) checkPause(0)
+      if(pausing) togglePause(0)
     }
 
 
 
-    function checkPause(e){
+    function togglePause(e){
       if(paused){
         paused=0;
         if(e)clearHighlight();
-        checkPause.func();
+        togglePause.callback();
       }else{
         paused = 1;
         if(e)highlight();
       }
     }
-    checkPause.func=function(){};
+    togglePause.callback=function(){};
 
 
     function setSpeed(code){
@@ -255,8 +367,8 @@
 
 
     function rewind(){
-      wordNumber-=10;
-      if (wordNumber < 0) wordNumber = 0;
+      wordCount-=10;
+      if (wordCount < 0) wordCount = 0;
     }
 
 
@@ -275,18 +387,18 @@
     }
 
 
-    function showDyn(delay){
-      showDyn.arr.push(delay);
-      if (showDyn.arr.length === 50){
+    function checkWpm(delay){
+      checkWpm.arr.push(delay);
+      if (checkWpm.arr.length === 50){
         var sum=0;
         for(var i=0; i<50; i++){
-          sum+=showDyn.arr[i];
+          sum+=checkWpm.arr[i];
         }
         updateWpm(60000/(sum/50));
-        showDyn.arr.length=0;
+        checkWpm.arr.length=0;
       }
     }
-    showDyn.arr=[];
+    checkWpm.arr=[];
 
 
     function addPane(obj){
@@ -300,10 +412,6 @@
       return elem;
     }
 
-    function showPane(node){
-      body.appendChild(node);
-      return node;
-    }
 
 
     function buildControlPane(){
@@ -321,16 +429,6 @@
       controlPane.addEventListener("mouseover",mouseOverColorSet);
       controlPane.addEventListener("mouseout",mouseOutColorSet);
       controlPane.addEventListener("mousedown",mouseDownColorSet);
-    }
-
-    function setColor(index){
-      if(index !== -1){
-        var rules = spreeSheet.rules;
-        rules[17].style.color = colors[index];
-        rules[8].style.backgroundColor = backgroundColors[index];
-        borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
-        if(globalNode)globalNode.style.cssText = borderStyle;
-      }
     }
 
     function mouseOverColorSet(e){
@@ -361,7 +459,7 @@
 
 
     function highlight(){
-      var textObj = para[nodeIndex];
+      var textObj = paragraph[textNodeIndex];
       if(!textObj) return;
 
       var words=textObj.words;
@@ -370,7 +468,7 @@
       if(!node) return;
       var parNode = node.parentNode;
 
-      var hlInd = wordNumber-1;
+      var hlInd = wordCount-1;
       var hlWord = textObj.words[hlInd];
       var firstPart = '';
       var secondPart = ''; 
@@ -397,12 +495,13 @@
     }
 
 
+
     function clearHighlight(){
       var hlNode = D.getElementsByClassName("spreeHL")[0];
       if(!hlNode)return;
       var firstNode = hlNode.previousSibling;
       var secondNode = hlNode.nextSibling;
-      var node = para[nodeIndex].node;
+      var node = paragraph[textNodeIndex].node;
       var parNode = hlNode.parentNode;
 
       parNode.insertBefore(node,firstNode);
@@ -412,91 +511,37 @@
     }
 
 
-    function checkSkip(node){
+
+    /**recursively find text nodes and add them to the paragraph array**/ 
+    function fillParagraph(node){
       var tag = node.tagName;
-      if(tag == "PRE")para.push({words:[pauseWord],gaps:["",""],node:node})
-        if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
-      var nodes = node.childNodes
-        , len=nodes.length;
+
+      if(tag == "PRE")paragraph.push({words:[pauseWord],gaps:["",""],node:node})
+      
+      if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
+      
+      var nodes = node.childNodes;
+      var  len=nodes.length;
+      
       if(len){
         for(var i=0; i<len; i++)
-          checkSkip(nodes[i])
+          fillParagraph(nodes[i])
       }else{
         if(node.nodeType === 3){
-          para.push(
-              {words:node.nodeValue.split(/\s+/),
-                gaps:node.nodeValue.split(/\S+/),
+          paragraph.push({
+            words:node.nodeValue.split(/\s+/),
+            gaps:node.nodeValue.split(/\S+/),
             node:node
-              });
+          });
         }
       }
     }
 
 
-    function spree(node,box){
-      var next = node.nextElementSibling;//||node.parentNode.nextElementSibling;
-      checkSkip(node);
-      if(!para.length){
-        if(next) return setTimeout(function(){spree(next,box)});
-        else return
-      }
-      var pLength = para.length-1;
-      var words = para[nodeIndex].words;
-      var len=words.length;
+    
+    
 
-      wordNumber=0;
-      globalNode = node;
-
-      if(node.offsetTop+node.clientHeight+parentY >innerHeight+W.scrollY)
-        W.scrollTo(0,node.offsetTop+parentY-50)
-
-          cssText = node.style.cssText;
-      node.style.cssText = borderStyle;
-
-      (function addWord(){
-        if(stopSpree)return;
-        if(paused){
-          checkPause.func=addWord;
-          return;
-        }
-        if(nodeIndex<pLength || wordNumber<len || leftovers.length){
-          var word;
-          var offset=0;
-          if(leftovers.length)
-        word = leftovers.shift();
-          else{
-            if (wordNumber === len){
-              words = para[++nodeIndex].words;
-              len = words.length;
-              wordNumber  = 0;
-            }
-            word = words[wordNumber++];
-          }
-
-      if(word.length > 20)
-        word = splitWord(word);
-
-      if(word.length){
-        createText(word,box);
-        var first = word[0];
-        var last = word[word.length-1];
-        if(first===first.toUpperCase())offset += gap/1.5;
-        if(last===','||last===';')offset+=gap/5;
-        else if(last==='.'||last==='?'||last==='!')offset+=gap/2.5;
-      }
-
-      var delay=gap+offset+word.length*8;
-      showDyn(delay);
-      setTimeout(addWord,delay);
-        }else{
-          cleanup();
-          if(next)
-            setTimeout(function(){spree(next,box)});
-        }
-      })();
-    }
-
-    function removeBorder(){
+    function removeParagraphBorder(){
       if(globalNode) globalNode.style.cssText=cssText;
     }
 
@@ -505,10 +550,10 @@
     }
 
     function cleanup(){
-      removeBorder();
+      removeParagraphBorder();
       globalNode = null;
-      para.length = 0;
-      nodeIndex = 0;     
+      paragraph.length = 0;
+      textNodeIndex = 0;     
     }
 
     function stop(){
@@ -546,7 +591,7 @@
       var code = e.keyCode;
       if(code===18) return;
       if(code===38||code===40)return setSpeed(code);
-      if(code===32)return checkPause(1);
+      if(code===32)return togglePause(1);
       if(code===37)return rewind();
       stop();
     }

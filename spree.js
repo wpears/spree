@@ -29,7 +29,7 @@
     var leftovers=[];
 
 
-    /**Style shortcuts**/
+    /**Style shortcuts and global colors**/
     var containerText = "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>";
     var borderStyle;
     var cssText;
@@ -43,6 +43,7 @@
     var indexOf = Array.prototype.indexOf;
 
 
+    /**Get a function that manages UI state in its closure**/
     var toggleControls=function(){
       var showing = 0;
       var firstCall = 1;
@@ -65,6 +66,7 @@
 
 
     /**Dynamically add styles. Allows full app to work as a bookmarklet**/ 
+    /**without external requests. Ugly, but functional.**/
     var spreeSheet = (function() {
       var style = D.createElement("style");
       style.appendChild(D.createTextNode(""));
@@ -180,10 +182,25 @@
       wpmDiv = addPane({
         id:'spreewpm',
         className:'spreeAtop spreeText'
-      }); 
-    }
-    
-    
+      });
+
+
+      /**Convenience function for adding UI elements to the body**/
+      function addPane(obj){
+        var elem = D.createElement('div');
+
+        for(var prop in obj){
+          if(obj.hasOwnProperty(prop)){
+            elem[prop] = obj[prop];
+          }
+        }
+
+        body.appendChild(elem);
+        return elem;
+      } 
+    } 
+
+
 
     /**reattach pre-generated nodes to the DOM**/
     function showPane(node){
@@ -201,20 +218,7 @@
         , mrg = +s.marginLeft.slice(0,-2)
         ;
       borderStyle="margin-left:"+(pd+brd+mrg-13)+"px;padding-left:10px;border-left:3px solid "+colors[colorIndex]+";"
-    }
-   
-
-
-    /**Apply color change to UI elements**/
-    function setColor(index){
-      if(index !== -1){
-        var rules = spreeSheet.rules;
-        rules[17].style.color = colors[index];
-        rules[8].style.backgroundColor = backgroundColors[index];
-        borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
-        if(globalNode)globalNode.style.cssText = borderStyle;
-      }
-    }
+    } 
 
 
 
@@ -305,6 +309,7 @@
 
 
 
+    /**Process word for display, allows for focal letter**/
     function createText(word,box){
       var pausing = word === pauseWord;
       var focus=word.length/3>>0;
@@ -341,115 +346,162 @@
 
 
 
-    function togglePause(e){
+    /**Pausing logic. Call the last set callback, which has node/text in its closure**/
+    /**Call the in-page word highlighter if the user initiated the pause**/
+    function togglePause(userPause){
       if(paused){
         paused=0;
-        if(e)clearHighlight();
+        if(userPause)clearHighlight();
         togglePause.callback();
       }else{
         paused = 1;
-        if(e)highlight();
+        if(userPause)highlight();
       }
     }
     togglePause.callback=function(){};
 
+    
 
+    /**Split long words into multiple, hyphenated words**/
+    /**Return the first, and process the remain bits before any new words**/
+    function splitWord(word){
+      var start =0
+        , end = 10
+        , len = word.length
+        , newWord
+        , subWord
+        ;
+
+      while(start < len){
+        subWord = word.slice(start,end);
+
+        if(end<len) subWord+="-"
+         
+        if(start===0)newWord = subWord;
+        else leftovers.push(subWord)
+
+        start+=10;
+        end+=10
+      }
+      return newWord
+    }
+
+   
+
+    /**Set speed on up/down, saving it if this is the extension**/ 
     function setSpeed(code){
       var factor = gap/5;
+
       if(code===38)gap-=factor;
       else gap+=factor;
+
       if(gap<10)gap=10;
-      if(chrome&&chrome.storage)
+
+      if(chrome&&chrome.storage){
         chrome.storage.sync.set({gap:gap})
-          var wpm = 60000/(gap+50);
+      }
+
+      var wpm = 60000/(gap+50);
       updateWpm(wpm);
     }
 
 
+
+    /**Reflect new WPM in the UI**/
+    function updateWpm(wpm){
+      wpmDiv.innerText='~'+wpm.toString().slice(0,6)+" wpm";
+    }
+
+
+
+    /**On left arrow, move back ten words, or to the start of the paragraph**/
     function rewind(){
       wordCount-=10;
       if (wordCount < 0) wordCount = 0;
     }
 
 
-    function splitWord(word){
-      var start =0;
-      var end = 10;
-      var newWord;
-      var curr;
-      for(var len=word.length;start<len;start+=10,end+=10){
-        curr = word.slice(start,end);
-        if(end<len) curr+="-"
-          if(start===0)newWord = curr;
-          else leftovers.push(curr)
-      }
-      return newWord
-    }
 
-
+    /**Every 50 words, update the wpm display with the average wpm for the block**/
     function checkWpm(delay){
-      checkWpm.arr.push(delay);
-      if (checkWpm.arr.length === 50){
+      var wpmArr = checkWpm.arr;
+      wpmArr.push(delay);
+
+      if (wpmArr.length === 50){
         var sum=0;
+
         for(var i=0; i<50; i++){
-          sum+=checkWpm.arr[i];
+          sum+=wpmArr[i];
         }
+
         updateWpm(60000/(sum/50));
-        checkWpm.arr.length=0;
+        wpmArr.length=0;
       }
     }
     checkWpm.arr=[];
+ 
 
 
-    function addPane(obj){
-      var elem = D.createElement('div');
-      for(var prop in obj){
-        if(obj.hasOwnProperty(prop)){
-          elem[prop] = obj[prop];
-        }
-      }
-      body.appendChild(elem);
-      return elem;
-    }
-
-
-
+    /**Generate control pane from the list of colors and hook up listeners**/ 
     function buildControlPane(){
       var colorDiv = D.createElement('div');
       colorDiv.id = "colorDiv";
+
       colors.forEach(function(v){
         var node = D.createElement('div')
         node.className = "spreeColor";
-      node.style.backgroundColor = v;
-      colorDiv.appendChild(node);
-      })
+        node.style.backgroundColor = v;
+        colorDiv.appendChild(node);
+      });
+
       controlPane.appendChild(colorDiv);
       colorSquares = colorDiv.children;
 
       controlPane.addEventListener("mouseover",mouseOverColorSet);
-      controlPane.addEventListener("mouseout",mouseOutColorSet);
       controlPane.addEventListener("mousedown",mouseDownColorSet);
+      controlPane.addEventListener("mouseout",mouseOutColorSet);
     }
+    
+   
 
+    /**Get and set the color from the list at the same index as the target node**/   
     function mouseOverColorSet(e){
       setColor(indexOf.call(colorSquares,e.target))
     }
 
+
+
+    /**Save the targeted color globally and remember it if in the extension**/
+    function mouseDownColorSet(e){
+      colorIndex = indexOf.call(colorSquares,e.target);
+      if(chrome&&chrome.storage){
+        chrome.storage.sync.set({colorIndex:colorIndex});
+      }
+    }
+
+
+
+    /**If leaving the box of colors, reapply the saved color**/
     function mouseOutColorSet(e){
       if(!e.toElement||e.toElement.className !== "spreeColor"){
         setColor(colorIndex);
       }
+    }    
+
+
+
+    /**Apply color change to UI elements**/
+    function setColor(index){
+      if(index !== -1){
+        var rules = spreeSheet.rules;
+        rules[17].style.color = colors[index];
+        rules[8].style.backgroundColor = backgroundColors[index];
+        borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
+        if(globalNode)globalNode.style.cssText = borderStyle;
+      }
     }
 
-    function mouseDownColorSet(e){
-      colorIndex = indexOf.call(colorSquares,e.target);
-      if(chrome&&chrome.storage)
-        chrome.storage.sync.set({colorIndex:colorIndex});
-    }
-
-    function updateWpm(wpm){
-      wpmDiv.innerText='~'+wpm.toString().slice(0,6)+" wpm";
-    }
+    
 
 
     function getYOffset(node,val){

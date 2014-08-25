@@ -1,5 +1,6 @@
 .DS_Store
 *.swp
-node_modules/
 *.min.js
+*.grunt
+node_modules/
 

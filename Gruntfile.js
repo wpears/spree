@@ -17,7 +17,13 @@ module.exports = function(grunt){
 		watch:{
 			files:['./spree.js'],
 			tasks:['default']
-		}
+		},
+    'gh-pages':{
+       options:{
+         base:'./'
+       },
+       src: ['index.html']
+     }
 	})
 
 	
@@ -25,7 +31,6 @@ module.exports = function(grunt){
 	grunt.loadNpmTasks("grunt-contrib-watch");
   grunt.loadNpmTasks("grunt-gh-pages"); 
 
-	grunt.registerTask('default',['uglify'])
   
   grunt.registerTask('makeIndex','Encode minified script and update index.html',
     function(grunt){
@@ -42,4 +47,6 @@ module.exports = function(grunt){
     });
 
   grunt.registerTask('pages',['uglify','makeIndex','gh-pages']);
+
+  grunt.registerTask('default',['pages']);
 };

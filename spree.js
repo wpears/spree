@@ -306,6 +306,41 @@
         }
       })();
     }
+    
+    
+
+    /**recursively find text nodes and add them to the paragraph array**/ 
+    /**The objects in the paragraph array track the words, whitespace, and the node**/
+    function fillParagraph(node){
+      var tag = node.tagName;
+
+      if(tag == "PRE")paragraph.push({words:[pauseWord],gaps:["",""],node:node})
+      
+      if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
+      
+      var nodes = node.childNodes;
+      var  len=nodes.length;
+      
+      if(len){
+        for(var i=0; i<len; i++)
+          fillParagraph(nodes[i])
+      }else{
+        if(node.nodeType === 3){
+          paragraph.push({
+            words:node.nodeValue.split(/\s+/),
+            gaps:node.nodeValue.split(/\S+/),
+            node:node
+          });
+        }
+      }
+    }
+
+    /**Recursively sum offset top values until body/html is reached**/
+    /**Get the 'absolute' position for elements positioned in any way**/
+    function getYOffset(node,val){
+      if (node === body||node===null)return val;
+      return getYOffset(node.offsetParent,val+node.offsetTop);
+    }  
 
 
 
@@ -493,23 +528,19 @@
     /**Apply color change to UI elements**/
     function setColor(index){
       if(index !== -1){
+
         var rules = spreeSheet.rules;
         rules[17].style.color = colors[index];
         rules[8].style.backgroundColor = backgroundColors[index];
-        borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
-        if(globalNode)globalNode.style.cssText = borderStyle;
-      }
-    }
 
+        borderStyle = borderStyle.slice(0,-8) + colors[index] +';';
+        setParagraphBorder(borderStyle);
+      }
+    } 
     
 
 
-    function getYOffset(node,val){
-      if (node === body||node===null)return val;
-      return getYOffset(node.offsetParent,val+node.offsetTop);
-    }
-
-
+    /**Highlight the current word on the page when the user pauses**/
     function highlight(){
       var textObj = paragraph[textNodeIndex];
       if(!textObj) return;
@@ -517,43 +548,54 @@
       var words=textObj.words;
       var gaps = textObj.gaps;
       var node = textObj.node;
+
       if(!node) return;
-      var parNode = node.parentNode;
 
       var hlInd = wordCount-1;
-      var hlWord = textObj.words[hlInd];
       var firstPart = '';
       var secondPart = ''; 
+      
+      /**Copy the text of the paragraph before current word**/ 
       for(var ind=0;ind<hlInd;ind++){
-        firstPart+= gaps[ind]+words[ind];
+        firstPart += gaps[ind] + words[ind];
       }
       firstPart+=gaps[hlInd]
-        for(ind = hlInd+1;ind<gaps.length;ind++){
-          var addition = gaps[ind];
-          if (words[ind]) addition += words[ind]
-            secondPart+=addition;
-        }
+
+      /**Copy the text of the paragraph after the current word**/
+      for(ind = hlInd+1;ind<gaps.length;ind++){
+        var addition = gaps[ind];
+        if (words[ind]) addition += words[ind]
+        secondPart+=addition;
+      }
+      
+      /**Create new nodes from the copied text**/ 
       var firstNode=D.createTextNode(firstPart);
       var secondNode=D.createTextNode(secondPart);
-
+      
+      /**Make the highlighted node**/ 
+      var hlWord = textObj.words[hlInd];
       var hlNode=D.createElement('span');
       hlNode.className='spreeHL';
       hlNode.innerText=hlWord;
+
+      /**Replace the old node with our newly made nodes**/
+      var parNode = node.parentNode;
       parNode.insertBefore(firstNode,node);
       parNode.insertBefore(hlNode,node);
       parNode.insertBefore(secondNode,node);
       parNode.removeChild(node);
-
-    }
-
+    } 
 
 
+
+    /**Replace a highlighted paragraph with its normal form**/
     function clearHighlight(){
       var hlNode = D.getElementsByClassName("spreeHL")[0];
       if(!hlNode)return;
+
+      var node = paragraph[textNodeIndex].node;
       var firstNode = hlNode.previousSibling;
       var secondNode = hlNode.nextSibling;
-      var node = paragraph[textNodeIndex].node;
       var parNode = hlNode.parentNode;
 
       parNode.insertBefore(node,firstNode);
@@ -564,80 +606,57 @@
 
 
 
-    /**recursively find text nodes and add them to the paragraph array**/ 
-    function fillParagraph(node){
-      var tag = node.tagName;
-
-      if(tag == "PRE")paragraph.push({words:[pauseWord],gaps:["",""],node:node})
-      
-      if(tag=="IMG"||tag=="SCRIPT"||tag=="EMBED"||tag=="PRE"||tag=="VIDEO"||tag=="TABLE"||tag=="FORM"||tag=="FIGURE") return;
-      
-      var nodes = node.childNodes;
-      var  len=nodes.length;
-      
-      if(len){
-        for(var i=0; i<len; i++)
-          fillParagraph(nodes[i])
-      }else{
-        if(node.nodeType === 3){
-          paragraph.push({
-            words:node.nodeValue.split(/\s+/),
-            gaps:node.nodeValue.split(/\S+/),
-            node:node
-          });
-        }
-      }
+    /**Set paragraph border, global to allow for easy use in cleanup**/
+    function setParagraphBorder(css){
+      if(globalNode) globalNode.style.cssText=css;
     }
-
-
     
     
 
-    function removeParagraphBorder(){
-      if(globalNode) globalNode.style.cssText=cssText;
-    }
-
+    /**Set the starting text to "Spree...".. to give the reader a warmup time**/ 
     function setStartText(){
       mainContainer.innerHTML="<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>"
     }
 
+
+
+    /**Wipe references to the current node and clear the paragraph array**/
     function cleanup(){
-      removeParagraphBorder();
+      setParagraphBorder(cssText);
       globalNode = null;
       paragraph.length = 0;
       textNodeIndex = 0;     
     }
 
+
+
+    /**Stop spree**/
     function stop(){
       stopSpree=1;
       active = 0;
       parentY=0;
       paused=0;
-      clearHighlight();
-      cleanup();
-      setStartText();
-      toggleControls(1);
+       
+      /**Remove UI elements from the DOM**/
       body.removeChild(mainContainer);
       body.removeChild(wpmDiv);
       body.removeChild(controls);
       body.removeChild(controlPane);
-      mainContainer.innerHTML = containerText;
+
+      /**Reset controls/components/variables**/
+      clearHighlight();
+      setStartText();
+      toggleControls(1);
+      cleanup();
+
+      /**Remove listeners**/
       W.removeEventListener("keydown",key);
       controls.removeEventListener("mousedown",mouse);
-    }
+    } 
 
-    function mouse(){
-      toggleControls(0);
-      W.addEventListener("mousedown",tog);
-    }
 
-    function tog(e){
-      if(e.target !== controls&&e.target.className !== "spreeColor"){
-        toggleControls(1);
-        W.removeEventListener("mousedown",tog)
-      }
-    }
 
+    /**Keydown handler, up/down for speed, left to rewind, space to pause, ignore alt**/
     function key(e){
       e.preventDefault();
       var code = e.keyCode;
@@ -648,7 +667,24 @@
       stop();
     }
 
-  }
+
+
+    /**Mousedown handler to toggle controls**/
+    function mouse(){
+      toggleControls(0);
+      W.addEventListener("mousedown",tog);
+    }
+
+
+
+    /**Force the controls closed with a mousedown anywhere after they have been open**/
+    function tog(e){
+      if(e.target !== controls && e.target.className !== "spreeColor"){
+        toggleControls(1);
+        W.removeEventListener("mousedown",tog)
+      }
+    }
+  } /**Exit main**/
   
   /**Run main once the DOM has loaded**/
   if(D.readyState === "loaded"||D.readyState === "complete") main();

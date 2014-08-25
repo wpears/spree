@@ -1,0 +1,29 @@
+{
+  "name": "spree",
+  "version": "2.0.3",
+  "description": "Extension and bookmarklet that allows you to read webpages one word at a time, quickly and easily.",
+  "main": "spree.js",
+  "dependencies": {},
+  "devDependencies": {
+    "grunt-contrib-uglify": "~0.5.1",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-gh-pages": "~0.9.1",
+    "cheerio": "~0.17.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/wpears/spree.git"
+  },
+  "keywords": [
+    "Reading",
+    "DOM"
+  ],
+  "author": "Wyatt Pearsall",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/wpears/spree/issues"
+  }
+}

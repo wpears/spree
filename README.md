@@ -1,8 +1,10 @@
 ### A Chrome Extension and bookmarklet that lets you read webpages one word at a time.
 
-[Get Bookmarklet](http://wpears.github.io/spree)
+Currently non-functional at a request from Spritz Technology, Inc., who kindly linked [their patent](https://www.google.com/patents/WO2014011884A1?cl=en&dq=WO+2014-011884&hl=en&sa=X&ei=oZ2PU8n9OsiLqAbesYKgAQ&ved=0CCgQ6AEwAA) and spoke quite highly of ten more patents yet to come.
 
-[Link to Extension](https://chrome.google.com/webstore/detail/spree/aehoaolhojlmaidnfkhdghceloolfojk)
+So don't uncomment the main functional call or listener, or this toy reader will become an attractive morsel for Spritz's cookpot, bless them.
+
+[Get Bookmarklet](http://wpears.github.io/spree)
 
 ### Controls
 

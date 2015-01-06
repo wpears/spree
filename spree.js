@@ -1,3 +1,7 @@
+/*Rendered nonfunctional as of 1/6/15 by request of Jamie Locke of Spritz Technology, Inc.*/
+/*Uncommenting the call/listener to main would result in an ...apparently... infringing program... so beware!*/
+/*What this tells about technology patents and the diligent 3 years of work Spritz did developing their serial reader I'll leave unsaid.*/
+ 
 (function(W,D){
   function main(){
     /**DOM Handles**/
@@ -30,7 +34,7 @@
 
 
     /**Style shortcuts and global colors**/
-    var containerText = "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Spree...</span></div>";
+    var containerText = "<div class='spreeaftwrap'><span class='spreeText' style='margin-left:-50px'>Infringer!</span></div>";
     var borderStyle;
     var cssText;
     var colors = ["#FFA500","#99793D","#FF6200","#40FFCE","#00FF76","#FFCF40","#1500FF","#773D99","#A000FF","#FF8700","#5E3D99","#444444","#00B5FF","#998B3D","#00F8FF","#FF0F26"];
@@ -687,6 +691,6 @@
   } /**Exit main**/
   
   /**Run main once the DOM has loaded**/
-  if(D.readyState === "loaded"||D.readyState === "complete") main();
-  else W.addEventListener("DOMContentLoaded",main);
+  //if(D.readyState === "loaded"||D.readyState === "complete") main();
+  //else W.addEventListener("DOMContentLoaded",main);
 })(window,document);
